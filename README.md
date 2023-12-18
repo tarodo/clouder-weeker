@@ -1,2 +1,2 @@
-# Clouder Weeker
-Welcome to Electronic Beats Curator, the ultimate tool for electronic music enthusiasts! Our project is designed to keep you at the forefront of the ever-evolving electronic music scene. By aggregating the latest tracks across various electronic genres, we ensure you have instant access to the freshest beats out there.
+# сLoudER Weeker
+Welcome to Clouder Weeker, the ultimate tool for electronic music enthusiasts! Our project is designed to keep you at the forefront of the ever-evolving electronic music scene. By aggregating the latest tracks across various electronic genres, we ensure you have instant access to the freshest beats out there.
