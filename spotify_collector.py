@@ -18,3 +18,17 @@ def get_track_by_isrc(isrc: str, sp: Spotify = None):
     return None
 
 
+def create_playlist(sp: Spotify, title: str) -> (str, str):
+    user_id = sp.me()["id"]
+    playlist = sp.user_playlist_create(user_id, title)
+    return playlist["id"], playlist["external_urls"]["spotify"]
+
+
+def add_tracks(sp: Spotify, playlist_id: str, tracks_ids: list[str]):
+    pack_size = 100
+    parts = [
+        tracks_ids[i : i + pack_size] for i in range(0, len(tracks_ids), pack_size)
+    ]
+    for part in parts:
+        sp.playlist_add_items(playlist_id, part)
+    return True

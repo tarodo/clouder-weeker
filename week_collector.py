@@ -7,28 +7,25 @@ import requests
 from environs import Env
 
 import week_dates
-from spotify_collector import get_track_by_isrc, create_sp
+from spotify_collector import get_track_by_isrc, create_sp, create_playlist, add_tracks
 
-TRACKS_SPOTIFY_DIR = "tracks_spotify"
-
+DATA_DIR = "data"
+FULL_WEEK_FILE = "full_week.json"
 WEEK_RAW_DIR = "week_raw"
-
 TRACKS_RAW_DIR = "tracks_raw"
+TRACKS_SPOTIFY_DIR = "tracks_spotify"
+NOT_FOUND_FILE = "_not_found.json"
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("weeker")
 
-DATA_DIR = "data"
-
+BP_BASE_URL = "https://api.beatport.com"
+RELEASES_URL = f"{BP_BASE_URL}/v4/catalog/releases"
 
 BP_STYLES = {
     1: "DNB",
 }
 
-BP_BASE_URL = "https://api.beatport.com"
-RELEASES_URL = f"{BP_BASE_URL}/v4/catalog/releases"
-
-NOT_FOUND_FILE = "_not_found.json"
 
 def save_one_page(url, params, headers, data_dir):
     logger.info(f"Try get: {url=}")
@@ -171,7 +168,7 @@ def collect_tracks(year: int, week_num: int, style_id: int, bp_token: str):
 
     releases_path = Path(DATA_DIR) / style_name / f"{year}" / week_num
     raw_dir_path = releases_path / WEEK_RAW_DIR
-    full_week_path = releases_path / "full_week.json"
+    full_week_path = releases_path / FULL_WEEK_FILE
 
     raw_tracks_path = releases_path / TRACKS_RAW_DIR
     os.makedirs(raw_tracks_path, exist_ok=True)
@@ -218,6 +215,25 @@ def collect_spotify_releases(year: int, week_num: int, style_id: int):
     logger.info(f"Not found count : {len(not_found)}")
 
 
+def create_spotify_playlist(year: int, week_num: int, style_id: int):
+    week_num = str(week_num).zfill(2)
+    style_name = BP_STYLES.get(style_id)
+    releases_path = Path(DATA_DIR) / style_name / f"{year}" / week_num
+    spotify_tracks_path = releases_path / TRACKS_SPOTIFY_DIR
+
+    sp = create_sp()
+
+    playlist_name = f"{style_name} :: {year} :: {week_num}"
+    playlist_id, playlist_url = create_playlist(sp, playlist_name)
+    logger.info(f"Playlist : {playlist_name} : created : {playlist_url}")
+    tracks_ids = []
+    for release_file in spotify_tracks_path.iterdir():
+        release_sp_tracks = json.load(open(release_file, "r"))
+        tracks_ids.extend([track["id"] for track in release_sp_tracks])
+    logger.info(f"Tracks count ready to load : {len(tracks_ids)}")
+    add_tracks(sp, playlist_id, tracks_ids)
+
+
 if __name__ == "__main__":
     env = Env()
     env.read_env()
@@ -225,6 +241,7 @@ if __name__ == "__main__":
     week_num = 11
     year = 2023
     style_id = 1
-    # handle_week(year, week_num, style_id, bp_token)
-    # collect_tracks(year, week_num, style_id, bp_token)
+    handle_week(year, week_num, style_id, bp_token)
+    collect_tracks(year, week_num, style_id, bp_token)
     collect_spotify_releases(year, week_num, style_id)
+    create_spotify_playlist(year, week_num, style_id)
