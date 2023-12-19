@@ -10,7 +10,11 @@ The application uses the following environment variables, which are stored in a 
 - `SPOTIPY_CLIENT_SECRET`: This is your Spotify client secret.
 - `SPOTIPY_REDIRECT_URI`: This is your Spotify redirect URI.
 - `PG_USER`: This is your DB username.
-- `PG_PASSWORD`: This is your DB password.
+- `PG_PASS`: This is your DB password.
+- `PG_HOST`: This is your DB address.
+- `PG_PORT`: This is your DB port.
+- `PG_DB`: This is your DB name.
+
 
 ## Running the Application
 To run the application, you must first install the dependencies:
