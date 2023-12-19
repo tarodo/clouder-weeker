@@ -3,7 +3,7 @@ from spotipy.oauth2 import SpotifyOAuth
 
 
 def create_sp():
-    scope = "playlist-modify-public"
+    scope = "playlist-modify-public playlist-modify-private"
     return Spotify(
         auth_manager=SpotifyOAuth(scope=scope, open_browser=False, show_dialog=True)
     )
@@ -20,7 +20,7 @@ def get_track_by_isrc(isrc: str, sp: Spotify = None):
 
 def create_playlist(sp: Spotify, title: str) -> (str, str):
     user_id = sp.me()["id"]
-    playlist = sp.user_playlist_create(user_id, title)
+    playlist = sp.user_playlist_create(user_id, title, public=False)
     return playlist["id"], playlist["external_urls"]["spotify"]
 
 
