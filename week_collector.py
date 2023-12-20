@@ -7,14 +7,10 @@ import requests
 from environs import Env
 
 import week_dates
+from raw_data import load_bp_releases, collect_bp_releases, load_bp_release_tracks
 from spotify_collector import (add_tracks, create_playlist, create_sp,
                                get_track_by_isrc)
 
-DATA_DIR = "data"
-WEEK_RAW_DIR = "week_raw"
-TRACKS_RAW_DIR = "tracks_raw"
-TRACKS_SPOTIFY_DIR = "tracks_spotify"
-NOT_FOUND_FILE = "_not_found.json"
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("weeker")
@@ -28,54 +24,73 @@ BP_STYLES = {
 }
 
 
-def save_one_page(url, params, headers, data_dir):
-    logger.info(f"Try get: {url=}")
+class ReleaseMeta:
+    DATA_DIR = "data"
+    WEEK_RAW_DIR = "week_raw"
+    TRACKS_RAW_DIR = "tracks_raw"
+    TRACKS_SPOTIFY_DIR = "tracks_spotify"
+    NOT_FOUND_FILE = "_not_found.json"
+
+    def __init__(self, week: int, year: int, style_id: int):
+        self.week = week
+        self.year = year
+        self.style_id = style_id
+
+        self.week_start, self.week_end = week_dates.get_start_end_dates(self.year, self.week)
+        self.style_name = BP_STYLES.get(self.style_id)
+        self.releases_path = self._create_path(self.DATA_DIR,  self.style_name, f"{self.year}",
+                                               str(self.week).zfill(2))
+        self.week_raw_path = self._create_path(self.releases_path, self.WEEK_RAW_DIR)
+        self.tracks_raw_path = self._create_path(self.releases_path, self.TRACKS_RAW_DIR)
+        self.tracks_spotify_path = self._create_path(self.releases_path, self.TRACKS_SPOTIFY_DIR)
+        self.not_found_path = self.tracks_spotify_path / self.NOT_FOUND_FILE
+
+    def __str__(self):
+        return (f"{self.style_name} :: {self.year} :: {self.week}\n{self.week_start} : {self.week_end}\n"
+                f"{self.releases_path}\n{self.week_raw_path}\n{self.tracks_raw_path}\n{self.tracks_spotify_path}\n"
+                f"{self.not_found_path}")
+
+    @staticmethod
+    def _create_path(*args):
+        path = Path(*args)
+        os.makedirs(path, exist_ok=True)
+        return path
+
+
+def save_one_page(url, params, headers, release_meta: ReleaseMeta):
     if not url.startswith("https://"):
         url = f"https://{url}"
     r = requests.get(url, params=params, headers=headers)
     r.raise_for_status()
     release_page = r.json()
-    page_num = release_page["page"].split("/")[0]
-    page_path = data_dir / f"page_{page_num}.json"
-    with open(page_path, "w") as f:
-        json.dump(r.json(), f, indent=4)
+    load_bp_releases(release_page["results"])
     next_page = release_page["next"]
     return next_page, dict()
 
 
-def collect_week(
-    start_date: str, end_date: str, genre_id: int, bp_token: str, data_dir: Path
-) -> list:
+def collect_week(release_meta: ReleaseMeta, bp_token: str) -> bool:
     url = RELEASES_URL
     params = {
-        "genre_id": {genre_id},
-        "publish_date": f"{start_date}:{end_date}",
+        "genre_id": {release_meta.style_id},
+        "publish_date": f"{release_meta.week_start}:{release_meta.week_end}",
         "page": 1,
         "per_page": 100,
         "order_by": "-publish_date",
     }
     headers = {"Authorization": f"Bearer {bp_token}"}
-    data_dir = data_dir / WEEK_RAW_DIR
-    os.makedirs(data_dir, exist_ok=True)
     while url:
-        url, params = save_one_page(url, params, headers, data_dir)
+        url, params = save_one_page(url, params, headers, release_meta)
+    return True
 
 
-def handle_week(year: int, week_number: int, style_id: int, bp_token: str):
-    week_number = str(week_number).zfill(2)
-    style_name = BP_STYLES.get(style_id)
-    start, end = week_dates.get_start_end_dates(year, week_number)
-    data_path = Path(DATA_DIR) / style_name / f"{year}" / week_number
-    os.makedirs(data_path, exist_ok=True)
-
+def handle_week(release_meta: ReleaseMeta, bp_token: str):
     logger.info(
-        f"Start :: {style_name} :: Year : {year} Week : {week_number} :: {start} : {end}"
+        f"Start :: {release_meta}"
     )
-    collect_week(start, end, style_id, bp_token, data_path)
+    collect_week(release_meta, bp_token)
 
 
-def handle_one_release(release: dict, raw_tracks_path: Path, bp_token: str):
-    release_id = release.get("id")
+def handle_one_release(release_id: int, bp_token: str):
     url = f"{RELEASES_URL}/{release_id}/tracks/"
     params = {
         "page": 1,
@@ -85,25 +100,13 @@ def handle_one_release(release: dict, raw_tracks_path: Path, bp_token: str):
     r = requests.get(url, params=params, headers=headers)
     r.raise_for_status()
     tracks = r.json()
-    with open(f"{raw_tracks_path}/{release_id}.json", "w") as f:
-        json.dump(tracks, f, indent=4)
+    load_bp_release_tracks(tracks["results"])
 
 
-def collect_tracks(year: int, week_num: int, style_id: int, bp_token: str):
-    week_num = str(week_num).zfill(2)
-    style_name = BP_STYLES.get(style_id)
-
-    releases_path = Path(DATA_DIR) / style_name / f"{year}" / week_num
-    raw_dir_path = releases_path / WEEK_RAW_DIR
-
-    raw_tracks_path = releases_path / TRACKS_RAW_DIR
-    os.makedirs(raw_tracks_path, exist_ok=True)
-
-    for week_page in raw_dir_path.iterdir():
-        with open(week_page, "r") as f:
-            page_data = json.load(f)
-        for item in page_data["results"]:
-            handle_one_release(item, raw_tracks_path, bp_token)
+def collect_tracks(release_meta: ReleaseMeta, bp_token: str):
+    release_ids = collect_bp_releases(release_meta.week_start.isoformat(), release_meta.week_end.isoformat())
+    for release_id in release_ids:
+        handle_one_release(release_id["id"], bp_token)
 
 
 def collect_spotify_releases(year: int, week_num: int, style_id: int):
@@ -166,10 +169,9 @@ if __name__ == "__main__":
     env = Env()
     env.read_env()
     bp_token = env.str("BP_TOKEN")
-    week_num = 10
-    year = 2023
-    style_id = 90
-    handle_week(year, week_num, style_id, bp_token)
-    collect_tracks(year, week_num, style_id, bp_token)
-    collect_spotify_releases(year, week_num, style_id)
-    create_spotify_playlist(year, week_num, style_id)
+    release_attr = ReleaseMeta(week=10, year=2023, style_id=1)
+    # print(release_attr)
+    # handle_week(release_attr, bp_token)
+    collect_tracks(release_attr, bp_token)
+    # collect_spotify_releases(year, week_num, style_id)
+    # create_spotify_playlist(year, week_num, style_id)

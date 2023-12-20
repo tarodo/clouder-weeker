@@ -1,4 +1,3 @@
-import json
 from typing import Iterable
 from urllib.parse import urlparse, quote, urlunparse
 
@@ -27,7 +26,10 @@ def init_db(db: MongoClient = None):
     if not db:
         db = get_db()
     db["bp_releases"].create_index([("id", -1)], unique=True)
-    db["bp_releases"].create_index([("new_release_date", -1)], unique=True)
+    db["bp_releases"].create_index([("new_release_date", -1)])
+
+    db["bp_release_tracks"].create_index([("id", -1)], unique=True)
+    db["bp_release_tracks"].create_index([("new_release_date", -1)])
 
 
 def load_bp_releases(releases: Iterable, db: MongoClient = None):
@@ -35,8 +37,24 @@ def load_bp_releases(releases: Iterable, db: MongoClient = None):
         db = get_db()
     db["bp_releases"].insert_many(releases)
 
-# release_file = "data/DNB/2023/10/week_raw/page_1.json"
-# releases = json.load(open(release_file, "r"))
-#
-# bp_releases = db["results"]
-# db.bp_releases.insert_many(releases["results"])
+
+def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None):
+    if not db:
+        db = get_db()
+    return db.bp_releases.find({
+        "publish_date": {
+            "$gte": week_start,
+            "$lte": week_end
+        }}, {"_id": 0, "id": 1}
+    )
+
+
+def load_bp_release_tracks(release_tracks: Iterable, db: MongoClient = None):
+    if not db:
+        db = get_db()
+    print(release_tracks)
+    # db["bp_release_tracks"].insert_many(release_tracks)
+
+
+if __name__ == "__main__":
+    init_db()
