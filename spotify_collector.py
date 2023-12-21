@@ -10,6 +10,8 @@ def create_sp():
 
 
 def get_track_by_isrc(isrc: str, sp: Spotify = None):
+    if not sp:
+        sp = create_sp()
     track_result = sp.search(q=f"isrc:{isrc}", type="track", limit=1)
     tracks = track_result["tracks"]["items"]
     if tracks:
