@@ -1,17 +1,14 @@
-import json
 import logging
-import os
-from pathlib import Path
 
 import requests
 from environs import Env
 
 import week_dates
-from raw_data import load_bp_releases, collect_bp_releases, load_bp_release_tracks, collect_bp_release_tracks, get_db, \
-    load_sp_track
+from raw_data import (collect_bp_releases, collect_bp_tracks,
+                      collect_week_sp_tracks, get_db, load_bp_releases,
+                      load_bp_tracks, load_sp_track)
 from spotify_collector import (add_tracks, create_playlist, create_sp,
                                get_track_by_isrc)
-
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("weeker")
@@ -36,29 +33,14 @@ class ReleaseMeta:
         self.week = week
         self.year = year
         self.style_id = style_id
-
-        self.week_start, self.week_end = week_dates.get_start_end_dates(self.year, self.week)
+        self.week_start, self.week_end = week_dates.get_start_end_dates(
+            self.year, self.week
+        )
         self.style_name = BP_STYLES.get(self.style_id)
-        self.releases_path = self._create_path(self.DATA_DIR,  self.style_name, f"{self.year}",
-                                               str(self.week).zfill(2))
-        self.week_raw_path = self._create_path(self.releases_path, self.WEEK_RAW_DIR)
-        self.tracks_raw_path = self._create_path(self.releases_path, self.TRACKS_RAW_DIR)
-        self.tracks_spotify_path = self._create_path(self.releases_path, self.TRACKS_SPOTIFY_DIR)
-        self.not_found_path = self.tracks_spotify_path / self.NOT_FOUND_FILE
-
-    def __str__(self):
-        return (f"{self.style_name} :: {self.year} :: {self.week}\n{self.week_start} : {self.week_end}\n"
-                f"{self.releases_path}\n{self.week_raw_path}\n{self.tracks_raw_path}\n{self.tracks_spotify_path}\n"
-                f"{self.not_found_path}")
-
-    @staticmethod
-    def _create_path(*args):
-        path = Path(*args)
-        os.makedirs(path, exist_ok=True)
-        return path
+        self.playlist_name = f"{self.style_name} :: {self.year} :: {self.week}"
 
 
-def save_one_page(url, params, headers, release_meta: ReleaseMeta):
+def save_one_page(url, params, headers):
     if not url.startswith("https://"):
         url = f"https://{url}"
     r = requests.get(url, params=params, headers=headers)
@@ -85,9 +67,7 @@ def collect_week(release_meta: ReleaseMeta, bp_token: str) -> bool:
 
 
 def handle_week(release_meta: ReleaseMeta, bp_token: str):
-    logger.info(
-        f"Start :: {release_meta}"
-    )
+    logger.info(f"Start :: {release_meta}")
     collect_week(release_meta, bp_token)
 
 
@@ -101,11 +81,13 @@ def handle_one_release(release_id: int, bp_token: str, mongo_db=None):
     r = requests.get(url, params=params, headers=headers)
     r.raise_for_status()
     tracks = r.json()
-    load_bp_release_tracks(tracks["results"], mongo_db)
+    load_bp_tracks(tracks["results"], mongo_db)
 
 
 def collect_tracks(release_meta: ReleaseMeta, bp_token: str):
-    release_ids = collect_bp_releases(release_meta.week_start.isoformat(), release_meta.week_end.isoformat())
+    release_ids = collect_bp_releases(
+        release_meta.week_start.isoformat(), release_meta.week_end.isoformat()
+    )
     mongo_db = get_db()
     for release_id in release_ids:
         handle_one_release(release_id["id"], bp_token, mongo_db)
@@ -116,12 +98,20 @@ def collect_spotify_releases(release_meta: ReleaseMeta):
 
     not_found = []
     tracks_count = 0
-    bp_tracks = collect_bp_release_tracks(release_meta.week_start.isoformat(), release_meta.week_end.isoformat())
+    bp_tracks = collect_bp_tracks(
+        release_meta.week_start.isoformat(), release_meta.week_end.isoformat()
+    )
     mongo_db = get_db()
     for bp_track in bp_tracks:
         sp_track = get_track_by_isrc(bp_track["isrc"], sp)
         if sp_track:
-            sp_track.update({"bp_track_id": bp_track["id"]})
+            sp_track.update(
+                {
+                    "bp_track_id": bp_track["id"],
+                    "bp_year": release_meta.year,
+                    "bp_week": release_meta.week,
+                }
+            )
             load_sp_track(sp_track, mongo_db)
             tracks_count += 1
         else:
@@ -132,24 +122,14 @@ def collect_spotify_releases(release_meta: ReleaseMeta):
     logger.info(f"Not found count : {len(not_found)}")
 
 
-def create_spotify_playlist(year: int, week_num: int, style_id: int):
-    week_num = str(week_num).zfill(2)
-    style_name = BP_STYLES.get(style_id)
-    releases_path = Path(DATA_DIR) / style_name / f"{year}" / week_num
-    spotify_tracks_path = releases_path / TRACKS_SPOTIFY_DIR
-
+def create_spotify_playlist(release_meta: ReleaseMeta):
     sp = create_sp()
 
-    playlist_name = f"{style_name} :: {year} :: {week_num}"
-    playlist_id, playlist_url = create_playlist(sp, playlist_name)
-    logger.info(f"Playlist : {playlist_name} : created : {playlist_url}")
-    tracks_ids = []
-    for release_file in spotify_tracks_path.iterdir():
-        if release_file.name == NOT_FOUND_FILE:
-            continue
-        release_sp_tracks = json.load(open(release_file, "r"))
+    playlist_id, playlist_url = create_playlist(sp, release_meta.playlist_name)
+    logger.info(f"Playlist : {release_meta.playlist_name} : created : {playlist_url}")
+    week_tracks = collect_week_sp_tracks(release_meta.year, release_meta.week)
+    tracks_ids = [track["id"] for track in week_tracks]
 
-        tracks_ids.extend([track["id"] for track in release_sp_tracks])
     logger.info(f"Tracks count ready to load : {len(tracks_ids)}")
     add_tracks(sp, playlist_id, tracks_ids)
 
@@ -159,7 +139,7 @@ if __name__ == "__main__":
     env.read_env()
     bp_token = env.str("BP_TOKEN")
     release_attr = ReleaseMeta(week=10, year=2023, style_id=1)
-    # handle_week(release_attr, bp_token)
-    # collect_tracks(release_attr, bp_token)
+    handle_week(release_attr, bp_token)
+    collect_tracks(release_attr, bp_token)
     collect_spotify_releases(release_attr)
-    # create_spotify_playlist(year, week_num, style_id)
+    create_spotify_playlist(release_attr)
