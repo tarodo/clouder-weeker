@@ -33,7 +33,7 @@ pip install -r requirements.txt
 
 4. To create indexes in the MongoDB database, run the following command:
 ```bash
-python raw_data.py
+python raw_adapter.py
 ```
 
 5. Then, you can run the application:

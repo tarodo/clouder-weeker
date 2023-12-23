@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -24,19 +24,18 @@ class Track(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String)
     isrc = Column(String)
-    artist_id = Column(Integer, ForeignKey('artists.id'))
+    artist_id = Column(Integer, ForeignKey("artists.id"))
 
 
 class PlatformArtist(Base):
     __tablename__ = "platforms_artists"
-    platform_id = Column(Integer, ForeignKey('platforms.id'), primary_key=True)
-    artist_id = Column(Integer, ForeignKey('artists.id'), primary_key=True)
+    platform_id = Column(Integer, ForeignKey("platforms.id"), primary_key=True)
+    artist_id = Column(Integer, ForeignKey("artists.id"), primary_key=True)
     platform_artist_id = Column(String)
 
 
 class PlatformTrack(Base):
     __tablename__ = "platforms_tracks"
-    track_id = Column(Integer, ForeignKey('tracks.id'), primary_key=True)
-    platform_id = Column(Integer, ForeignKey('platforms.id'), primary_key=True)
+    track_id = Column(Integer, ForeignKey("tracks.id"), primary_key=True)
+    platform_id = Column(Integer, ForeignKey("platforms.id"), primary_key=True)
     platform_track_id = Column(String)
-

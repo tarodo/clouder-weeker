@@ -3,7 +3,7 @@ from typing import Iterable
 from environs import Env
 from pymongo import MongoClient
 
-from db import get_raw_db
+from dbs_config import get_raw_db
 
 env = Env()
 env.read_env()

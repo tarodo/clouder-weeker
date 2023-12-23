@@ -4,11 +4,12 @@ import requests
 from environs import Env
 
 import utils
-from raw_data import (collect_bp_releases, collect_bp_tracks,
-                      collect_week_sp_tracks, get_raw_db, load_bp_releases,
-                      load_bp_tracks, load_sp_track)
-from spotify_collector import (add_tracks, create_playlist, create_sp,
-                               get_track_by_isrc)
+from dbs_config import get_raw_db
+from raw_adapter import (collect_bp_releases, collect_bp_tracks,
+                         collect_week_sp_tracks, load_bp_releases,
+                         load_bp_tracks, load_sp_track)
+from spotify_adapter import (add_tracks, create_playlist, create_sp,
+                             get_track_by_isrc)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("weeker")
@@ -27,9 +28,7 @@ class ReleaseMeta:
         self.week = week
         self.year = year
         self.style_id = style_id
-        self.week_start, self.week_end = utils.get_start_end_dates(
-            self.year, self.week
-        )
+        self.week_start, self.week_end = utils.get_start_end_dates(self.year, self.week)
         self.style_name = BP_STYLES.get(self.style_id)
         self.playlist_name = f"{self.style_name} :: {self.year} :: {self.week}"
 

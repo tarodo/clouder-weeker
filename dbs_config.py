@@ -1,13 +1,13 @@
-from urllib.parse import urlparse, quote, urlunparse
+from urllib.parse import quote, urlparse, urlunparse
 
+from environs import Env, EnvError
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from models import Base
-from environs import Env, EnvError
+from trans_models import Base
 
 env = Env()
 env.read_env()
@@ -31,7 +31,7 @@ def get_engine():
     return create_engine(str(urlunparse(url)))
 
 
-def create_trans_session(engine=None):
+def get_trans_session(engine=None):
     if engine is None:
         engine = get_engine()
     return sessionmaker(bind=engine)
