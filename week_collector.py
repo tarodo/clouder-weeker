@@ -3,9 +3,9 @@ import logging
 import requests
 from environs import Env
 
-import week_dates
+import utils
 from raw_data import (collect_bp_releases, collect_bp_tracks,
-                      collect_week_sp_tracks, get_db, load_bp_releases,
+                      collect_week_sp_tracks, get_raw_db, load_bp_releases,
                       load_bp_tracks, load_sp_track)
 from spotify_collector import (add_tracks, create_playlist, create_sp,
                                get_track_by_isrc)
@@ -23,17 +23,11 @@ BP_STYLES = {
 
 
 class ReleaseMeta:
-    DATA_DIR = "data"
-    WEEK_RAW_DIR = "week_raw"
-    TRACKS_RAW_DIR = "tracks_raw"
-    TRACKS_SPOTIFY_DIR = "tracks_spotify"
-    NOT_FOUND_FILE = "_not_found.json"
-
     def __init__(self, week: int, year: int, style_id: int):
         self.week = week
         self.year = year
         self.style_id = style_id
-        self.week_start, self.week_end = week_dates.get_start_end_dates(
+        self.week_start, self.week_end = utils.get_start_end_dates(
             self.year, self.week
         )
         self.style_name = BP_STYLES.get(self.style_id)
@@ -52,7 +46,7 @@ def save_one_page(url, params, headers):
 
 
 def collect_week(release_meta: ReleaseMeta, bp_token: str) -> bool:
-    url = RELEASES_URL
+    url = f"{RELEASES_URL}/"
     params = {
         "genre_id": {release_meta.style_id},
         "publish_date": f"{release_meta.week_start}:{release_meta.week_end}",
@@ -62,7 +56,7 @@ def collect_week(release_meta: ReleaseMeta, bp_token: str) -> bool:
     }
     headers = {"Authorization": f"Bearer {bp_token}"}
     while url:
-        url, params = save_one_page(url, params, headers, release_meta)
+        url, params = save_one_page(url, params, headers)
     return True
 
 
@@ -88,7 +82,7 @@ def collect_tracks(release_meta: ReleaseMeta, bp_token: str):
     release_ids = collect_bp_releases(
         release_meta.week_start.isoformat(), release_meta.week_end.isoformat()
     )
-    mongo_db = get_db()
+    mongo_db = get_raw_db()
     for release_id in release_ids:
         handle_one_release(release_id["id"], bp_token, mongo_db)
 
@@ -101,7 +95,7 @@ def collect_spotify_releases(release_meta: ReleaseMeta):
     bp_tracks = collect_bp_tracks(
         release_meta.week_start.isoformat(), release_meta.week_end.isoformat()
     )
-    mongo_db = get_db()
+    mongo_db = get_raw_db()
     for bp_track in bp_tracks:
         sp_track = get_track_by_isrc(bp_track["isrc"], sp)
         if sp_track:
@@ -138,7 +132,7 @@ if __name__ == "__main__":
     env = Env()
     env.read_env()
     bp_token = env.str("BP_TOKEN")
-    release_attr = ReleaseMeta(week=10, year=2023, style_id=1)
+    release_attr = ReleaseMeta(week=11, year=2023, style_id=1)
     handle_week(release_attr, bp_token)
     collect_tracks(release_attr, bp_token)
     collect_spotify_releases(release_attr)
