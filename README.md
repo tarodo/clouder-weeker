@@ -22,21 +22,22 @@ The application uses the following environment variables, which are stored in a 
 
 
 ## Running the Application
-1. Activate the virtual environment:
+1. Activate the virtual environment
 
-2. To run the application, you must first install the dependencies:
+2. Install the dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Create a mongo database named `clouder` 
+3. Create a mongo database named `clouder`
+4. Create a postgres database named `clouder`
 
-4. To create indexes in the MongoDB database, run the following command:
+5. To init databases:
 ```bash
-python raw_adapter.py
+python dbs_config.py
 ```
 
-5. Then, you can run the application:
+6. Then, you can run the application:
 ```bash
 python week_collector.py
 ```
