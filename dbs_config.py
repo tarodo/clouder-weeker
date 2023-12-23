@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from trans_models import Base
+from trans_models import Base, get_init_styles, Style, get_init_platforms, Platform
 
 env = Env()
 env.read_env()
@@ -34,7 +34,7 @@ def get_engine():
 def get_trans_session(engine=None):
     if engine is None:
         engine = get_engine()
-    return sessionmaker(bind=engine)
+    return sessionmaker(bind=engine)()
 
 
 def get_raw_db():
@@ -60,11 +60,24 @@ def get_raw_db():
         raise
 
 
+def reg_init_data(engine):
+    styles = get_init_styles()
+    platforms = get_init_platforms()
+    session = get_trans_session(engine)
+    if session.query(Style).first() is None:
+        session.add_all(styles)
+        session.commit()
+    if session.query(Platform).first() is None:
+        session.add_all(platforms)
+        session.commit()
+
+
 def init_trans_db(engine=None):
     if engine is None:
         engine = get_engine()
     try:
         Base.metadata.create_all(bind=engine)
+        reg_init_data(engine)
     except OperationalError:
         print("PostgreSQL is not available.")
         raise

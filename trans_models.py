@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, Date
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -13,6 +13,26 @@ class Platform(Base):
     track_collection = Column(String)
 
 
+def get_init_platforms() -> list[Platform]:
+    return [
+        Platform(name="Beatport", short_name="BP", artist_collection="bp_artists", track_collection="bp_tracks"),
+        Platform(name="Spotify", short_name="SP", artist_collection="sp_artists", track_collection="sp_tracks"),
+    ]
+
+
+class Style(Base):
+    __tablename__ = "styles"
+    id = Column(Integer, primary_key=True, autoincrement=False)
+    name = Column(String)
+
+
+def get_init_styles() -> list[Style]:
+    return [
+        Style(id=1, name="DNB"),
+        Style(id=90, name="TECHNO"),
+    ]
+
+
 class Artist(Base):
     __tablename__ = "artists"
     id = Column(Integer, primary_key=True)
@@ -24,7 +44,8 @@ class Track(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String)
     isrc = Column(String)
-    artist_id = Column(Integer, ForeignKey("artists.id"))
+    artist_id = Column(Integer, ForeignKey("artists.id"), nullable=False)
+    style_id = Column(Integer, ForeignKey("styles.id"), nullable=False)
 
 
 class PlatformArtist(Base):
@@ -39,3 +60,5 @@ class PlatformTrack(Base):
     track_id = Column(Integer, ForeignKey("tracks.id"), primary_key=True)
     platform_id = Column(Integer, ForeignKey("platforms.id"), primary_key=True)
     platform_track_id = Column(String)
+    publish_date = Column(Date)
+    release_date = Column(Date)
