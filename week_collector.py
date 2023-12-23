@@ -5,11 +5,15 @@ from environs import Env
 
 import utils
 from dbs_config import get_raw_db
-from raw_adapter import (collect_bp_releases, collect_bp_tracks,
-                         collect_week_sp_tracks, load_bp_releases,
-                         load_bp_tracks, load_sp_track)
-from spotify_adapter import (add_tracks, create_playlist, create_sp,
-                             get_track_by_isrc)
+from raw_adapter import (
+    collect_bp_releases,
+    collect_bp_tracks,
+    collect_week_sp_tracks,
+    load_bp_releases,
+    load_bp_tracks,
+    load_sp_track,
+)
+from spotify_adapter import add_tracks, create_playlist, create_sp, get_track_by_isrc
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("weeker")
