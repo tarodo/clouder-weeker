@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from sqlalchemy import Column, ForeignKey, Integer, String, Date, Table
+from sqlalchemy import Column, Date, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -106,16 +106,6 @@ class PlatformArtist(Base):
 
     artist = relationship("Artist", backref="platform_artist")
 
-    @classmethod
-    @lru_cache()
-    def get_artist_id(cls, session, platform_id, platform_artist_id):
-        platform_artist: cls = (
-            session.query(cls)
-            .filter_by(platform_id=platform_id, platform_artist_id=platform_artist_id)
-            .first()
-        )
-        return platform_artist.artist if platform_artist else None
-
 
 class PlatformTrack(Base):
     __tablename__ = "platforms_tracks"
@@ -124,3 +114,5 @@ class PlatformTrack(Base):
     platform_track_id = Column(String)
     publish_date = Column(Date)
     release_date = Column(Date)
+
+    track = relationship("Track", backref="platform_track")

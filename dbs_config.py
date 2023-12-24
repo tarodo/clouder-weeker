@@ -1,3 +1,4 @@
+from functools import wraps
 from urllib.parse import quote, urlparse, urlunparse
 
 from environs import Env, EnvError
@@ -7,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from trans_models import Base, Style, Platform
+from trans_models import Base, Platform, Style
 
 env = Env()
 env.read_env()
@@ -100,6 +101,19 @@ def init_databases():
         init_trans_db()
     except (EnvError, ServerSelectionTimeoutError, OperationalError):
         print("Failed to initialize databases.")
+
+
+def with_session(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        session_provided = kwargs.get('session')
+        if not session_provided:
+            kwargs['session'] = get_trans_session()
+        result = func(*args, **kwargs)
+        if not session_provided:
+            kwargs['session'].close()
+        return result
+    return wrapper
 
 
 if __name__ == "__main__":
