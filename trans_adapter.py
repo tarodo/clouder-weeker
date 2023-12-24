@@ -1,10 +1,13 @@
 from dbs_config import get_trans_session
-from trans_models import Artist, Platform, PlatformArtist
+from trans_models import Artist, Platform, PlatformArtist, PlatformTrack
 
 
-def get_or_create_artist_bp(artist: dict, session=None):
+def get_artist_by_id(artist_id: int, session) -> Artist:
+    return session.query(Artist).filter_by(id=artist_id).first()
+
+def get_or_create_artist_bp(artist: dict, session=None) -> int:
     if not artist:
-        return None
+        raise ValueError("Artist is empty")
 
     own_session = False
     if not session:
@@ -16,9 +19,9 @@ def get_or_create_artist_bp(artist: dict, session=None):
     if not platform_artist_id:
         raise ValueError("Artist does not have bp_id")
 
-    artist_id = PlatformArtist.get_artist_id(session, platform_id, platform_artist_id)
-    if artist_id:
-        return artist_id
+    old_artist = PlatformArtist.get_artist_id(session, platform_id, platform_artist_id)
+    if old_artist:
+        return old_artist.id
 
     artist_name = artist["name"]
     new_artist = Artist(name=artist_name)
@@ -34,15 +37,33 @@ def get_or_create_artist_bp(artist: dict, session=None):
         session.add(platform_artist)
         session.commit()
 
-        return new_artist
+        return new_artist.id
 
-    except Exception as e:
+    except Exception:
         session.rollback()
-        raise e
+        raise
 
     finally:
         if own_session:
             session.close()
 
 
-get_or_create_artist_bp({"bp_id": "1", "name": "test"})
+def get_or_create_track_bp(track: dict, artists_ids, session=None):
+    own_session = False
+    if not session:
+        session = get_trans_session()
+        own_session = True
+    try:
+        artists = [get_artist_by_id(artist_id, session) for artist_id in artists_ids]
+        platform_id = Platform.get_id_by_short_name(session, "BP")
+        platform_track_id = track.get("bp_id")
+        if not platform_track_id:
+            raise ValueError("Track does not have bp_id")
+        old_track = PlatformTrack.get_track_id(session, platform_id, platform_track_id)
+    except Exception:
+        raise
+
+
+
+artist = get_or_create_artist_bp({"bp_id": "sdffds1", "name": "DJ Bublik 1"})
+print(artist)

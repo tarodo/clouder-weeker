@@ -49,23 +49,6 @@ class Platform(Base):
             raise
 
 
-def get_init_platforms() -> list[Platform]:
-    return [
-        Platform(
-            name="Beatport",
-            short_name="BP",
-            artist_collection="bp_artists",
-            track_collection="bp_tracks",
-        ),
-        Platform(
-            name="Spotify",
-            short_name="SP",
-            artist_collection="sp_artists",
-            track_collection="sp_tracks",
-        ),
-    ]
-
-
 class Style(Base):
     __tablename__ = "styles"
     id = Column(Integer, primary_key=True, autoincrement=False)
@@ -121,15 +104,17 @@ class PlatformArtist(Base):
     artist_id = Column(Integer, ForeignKey("artists.id"), primary_key=True)
     platform_artist_id = Column(String, nullable=False)
 
+    artist = relationship("Artist", backref="platform_artist")
+
     @classmethod
     @lru_cache()
     def get_artist_id(cls, session, platform_id, platform_artist_id):
-        platform_artist = (
+        platform_artist: cls = (
             session.query(cls)
             .filter_by(platform_id=platform_id, platform_artist_id=platform_artist_id)
             .first()
         )
-        return platform_artist.id if platform_artist else None
+        return platform_artist.artist if platform_artist else None
 
 
 class PlatformTrack(Base):

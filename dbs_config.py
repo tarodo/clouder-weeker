@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 
-from trans_models import Base, Style, get_init_platforms, Platform
+from trans_models import Base, Style, Platform
 
 env = Env()
 env.read_env()
