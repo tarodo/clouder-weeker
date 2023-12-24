@@ -1,24 +1,10 @@
 from sqlalchemy.orm import Session
-
-from dbs_config import get_trans_session, with_session
+from dbs_config import with_session
 from trans_models import Artist, Platform, PlatformArtist, PlatformTrack, Track
 
 
-def get_artist_by_id(artist_id: int, session) -> Artist:
-    return session.query(Artist).filter_by(id=artist_id).first()
-
-
-def get_artist_id(session, platform_id, platform_artist_id):
-    platform_artist: PlatformArtist | None = (
-        session.query(PlatformArtist)
-        .filter_by(platform_id=platform_id, platform_artist_id=platform_artist_id)
-        .first()
-    )
-    return platform_artist.artist if platform_artist else None
-
-
 @with_session
-def get_or_create_artist_bp(artist: dict, session=None) -> int:
+def get_or_create_artist_bp(artist: dict, session: Session = None) -> int:
     if not artist:
         raise ValueError("Artist is empty")
 
@@ -27,55 +13,58 @@ def get_or_create_artist_bp(artist: dict, session=None) -> int:
     if not platform_artist_id:
         raise ValueError("Artist does not have bp_id")
 
-    old_artist = PlatformArtist.get_artist_id(session, platform_id, platform_artist_id)
+    old_artist = session.query(PlatformArtist).filter_by(platform_id=platform_id,
+                                                         platform_artist_id=platform_artist_id).first()
     if old_artist:
-        return old_artist.id
+        return old_artist.artist.id
 
-    artist_name = artist["name"]
-    new_artist = Artist(name=artist_name)
-    try:
-        session.add(new_artist)
-        session.flush()
+    new_artist = Artist(name=artist["name"])
+    session.add(new_artist)
+    session.flush()
 
-        platform_artist = PlatformArtist(
-            platform_id=platform_id,
-            platform_artist_id=platform_artist_id,
-            artist_id=new_artist.id,
-        )
-        session.add(platform_artist)
-        session.commit()
-
-        return new_artist.id
-
-    except Exception:
-        session.rollback()
-        raise
-
-
-def get_track(session: Session, platform_id: str, platform_track_id: str) -> Track:
-    platform_track: PlatformTrack | None = (
-        session.query(PlatformTrack)
-        .filter_by(platform_id=platform_id, platform_track_id=platform_track_id)
-        .first()
+    platform_artist = PlatformArtist(
+        platform_id=platform_id,
+        platform_artist_id=platform_artist_id,
+        artist_id=new_artist.id,
     )
-    return platform_track.track if platform_track else None
+    session.add(platform_artist)
+    session.commit()
+
+    return new_artist.id
 
 
 @with_session
 def get_or_create_track_bp(track: dict, artists_ids, session=None) -> int:
-    try:
-        artists = [get_artist_by_id(artist_id, session) for artist_id in artists_ids]
-        platform_id = Platform.get_id_by_short_name(session, "BP")
-        platform_track_id = track.get("bp_id")
-        if not platform_track_id:
-            raise ValueError("Track does not have bp_id")
-        old_track: Track = get_track(session, platform_id, platform_track_id)
-        if old_track:
-            return old_track.id
-    except Exception:
-        raise
+    artists = [session.query(Artist).filter_by(id=artist_id).first() for artist_id in artists_ids]
+    platform_id = Platform.get_id_by_short_name(session, "BP")
+    platform_track_id = track.get("bp_id")
+    if not platform_track_id:
+        raise ValueError("Track does not have bp_id")
+
+    old_track = session.query(PlatformTrack).filter_by(platform_id=platform_id,
+                                                       platform_track_id=platform_track_id).first()
+    if old_track:
+        return old_track.track.id
+
+    new_track = Track(title=track["title"], artists=artists, style_id=track["style_id"])
+    session.add(new_track)
+    session.flush()
+
+    platform_track = PlatformTrack(
+        platform_id=platform_id,
+        platform_track_id=platform_track_id,
+        track_id=new_track.id,
+    )
+    session.add(platform_track)
+    session.commit()
+
+    return new_track.id
 
 
 if __name__ == "__main__":
-    artist = get_or_create_artist_bp({"bp_id": "sdffds1", "name": "DJ Bublik 1"})
-    print(artist)
+    art_1 = {"name": "Artist 1", "bp_id": "1"}
+    art_2 = {"name": "Artist 2", "bp_id": "2"}
+    art_ids = [get_or_create_artist_bp(art_1), get_or_create_artist_bp(art_2)]
+    track_1 = {"title": "Track 1", "style_id": 1, "bp_id": "1"}
+    track_id = get_or_create_track_bp(track_1, art_ids)
+    print(track_id)
