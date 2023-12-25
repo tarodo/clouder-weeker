@@ -15,12 +15,6 @@ class Platform(Base):
     track_collection = Column(String, unique=True)
 
     @classmethod
-    @lru_cache(maxsize=10)
-    def get_id_by_short_name(cls, session, short_name):
-        platform = session.query(cls).filter_by(short_name=short_name).first()
-        return platform.id if platform else None
-
-    @classmethod
     def create_init(cls, session):
         existing_names = {platform.name for platform in session.query(cls.name).all()}
         new_platforms = [

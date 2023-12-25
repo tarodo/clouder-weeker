@@ -108,6 +108,7 @@ def with_session(func):
     def wrapper(*args, **kwargs):
         session_provided = kwargs.get('session')
         if not session_provided:
+            print(f"Session is not provided for {func.__name__}")
             kwargs['session'] = get_trans_session()
         result = func(*args, **kwargs)
         if not session_provided:
