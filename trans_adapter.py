@@ -43,10 +43,10 @@ def get_or_create_artist_bp(artist: dict, session: Session = None) -> int:
 
 
 @with_session
-def get_or_create_track_bp(track: dict, artists_ids, session=None) -> int:
+def get_or_create_track_bp(bp_track: dict, artists_ids, session=None) -> int:
     artists = [session.query(Artist).filter_by(id=artist_id).first() for artist_id in artists_ids]
     platform_id = get_platform_id("BP")
-    platform_track_id = track.get("bp_id")
+    platform_track_id = bp_track.get("bp_id")
     if not platform_track_id:
         raise ValueError("Track does not have bp_id")
 
@@ -55,7 +55,7 @@ def get_or_create_track_bp(track: dict, artists_ids, session=None) -> int:
     if old_track:
         return old_track.track.id
 
-    new_track = Track(title=track["title"], artists=artists, style_id=track["style_id"])
+    new_track = Track(title=bp_track["title"], artists=artists, style_id=bp_track["style_id"])
     session.add(new_track)
     session.flush()
 
@@ -63,6 +63,8 @@ def get_or_create_track_bp(track: dict, artists_ids, session=None) -> int:
         platform_id=platform_id,
         platform_track_id=platform_track_id,
         track_id=new_track.id,
+        publish_date=bp_track.get("publish_date"),
+        release_date=bp_track.get("release_date")
     )
     session.add(platform_track)
     session.commit()
@@ -71,7 +73,8 @@ def get_or_create_track_bp(track: dict, artists_ids, session=None) -> int:
 
 
 @with_session
-def connect_track_sp_to_bp(track_bp_id, track_sp_id, session=None):
+def connect_track_sp_to_bp(track_bp_id, sp_track, session=None):
+    track_sp_id = sp_track.get("id")
     bp_platform_id = get_platform_id("BP")
     sp_platform_id = get_platform_id("SP")
     old_track_bp = session.query(PlatformTrack).filter_by(platform_id=bp_platform_id,
@@ -90,19 +93,9 @@ def connect_track_sp_to_bp(track_bp_id, track_sp_id, session=None):
         platform_id=sp_platform_id,
         platform_track_id=track_sp_id,
         track_id=old_track_bp.track.id,
+        release_date=sp_track.get("release_date"),
     )
     session.add(new_track_sp)
     session.commit()
 
     return new_track_sp.track.id
-
-
-if __name__ == "__main__":
-    art_1 = {"name": "Artist 1", "bp_id": "1"}
-    art_2 = {"name": "Artist 2", "bp_id": "2"}
-    art_ids = [get_or_create_artist_bp(art_1), get_or_create_artist_bp(art_2)]
-    track_1 = {"title": "Track 1", "style_id": 1, "bp_id": "bp1"}
-    track_id = get_or_create_track_bp(track_1, art_ids)
-    print(track_id)
-    track_id = connect_track_sp_to_bp("bp1", "sp1")
-    print(track_id)
