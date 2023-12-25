@@ -1,8 +1,11 @@
+import logging
 from functools import lru_cache
 
 from sqlalchemy.orm import Session
 from dbs_config import with_session
 from trans_models import Artist, Platform, PlatformArtist, PlatformTrack, Track
+
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=10)
@@ -55,7 +58,7 @@ def get_or_create_track_bp(bp_track: dict, artists_ids, session=None) -> int:
     if old_track:
         return old_track.track.id
 
-    new_track = Track(title=bp_track["title"], artists=artists, style_id=bp_track["style_id"])
+    new_track = Track(title=bp_track["title"], isrc=bp_track["isrc"], artists=artists, style_id=bp_track["style_id"])
     session.add(new_track)
     session.flush()
 
@@ -99,3 +102,21 @@ def connect_track_sp_to_bp(track_bp_id, sp_track, session=None):
     session.commit()
 
     return new_track_sp.track.id
+
+
+@with_session
+def reg_bp_track(track: dict, session: Session = None) -> int:
+    logger.info(f"Registering track : {track['id']} :: Start")
+    artists = [{"bp_id": str(artist["id"]), "name": artist["name"]} for artist in track["artists"]]
+    artists_ids = [get_or_create_artist_bp(artist, session=session) for artist in artists]
+    track_data = {
+        "bp_id": str(track["id"]),
+        "title": track["name"],
+        "isrc": track["isrc"],
+        "publish_date": track["publish_date"],
+        "release_date": track["new_release_date"],
+        "style_id": track["sale_type"]["id"],
+    }
+    track_id = get_or_create_track_bp(track_data, artists_ids, session=session)
+    logger.info(f"Registering track : {track['id']} :: Done")
+    return track_id

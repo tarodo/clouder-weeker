@@ -1,4 +1,5 @@
 from functools import wraps
+from inspect import signature
 from urllib.parse import quote, urlparse, urlunparse
 
 from environs import Env, EnvError
@@ -106,14 +107,25 @@ def init_databases():
 def with_session(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        session_provided = kwargs.get('session')
-        if not session_provided:
+        func_sig = signature(func)
+        accepts_session = 'session' in func_sig.parameters
+
+        session_provided = 'session' in kwargs
+        if accepts_session and not session_provided:
             print(f"Session is not provided for {func.__name__}")
             kwargs['session'] = get_trans_session()
-        result = func(*args, **kwargs)
-        if not session_provided:
-            kwargs['session'].close()
+            session_created = True
+        else:
+            session_created = False
+
+        try:
+            result = func(*args, **kwargs)
+        finally:
+            if session_created:
+                kwargs['session'].close()
+
         return result
+
     return wrapper
 
 
