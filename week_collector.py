@@ -11,10 +11,11 @@ from raw_adapter import (collect_bp_releases, collect_bp_tracks,
                          load_bp_track, load_sp_track)
 from spotify_adapter import (add_tracks, create_playlist, create_sp,
                              get_track_by_isrc)
-from trans_adapter import reg_bp_track
+from trans_adapter import (collect_week_tacks, connect_track_sp_to_bp,
+                           reg_bp_track)
 
 setup_logging()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 BP_BASE_URL = "https://api.beatport.com"
 RELEASES_URL = f"{BP_BASE_URL}/v4/catalog/releases"
@@ -30,6 +31,8 @@ class ReleaseMeta:
         self.week = week
         self.year = year
         self.style_id = style_id
+
+        # Calculate meta additional fields
         self.week_start, self.week_end = utils.get_start_end_dates(self.year, self.week)
         self.style_name = BP_STYLES.get(self.style_id)
         self.playlist_name = f"{self.style_name} :: {self.year} :: {self.week}"
@@ -39,6 +42,7 @@ class ReleaseMeta:
 
 
 def save_one_page(url, params, headers):
+    logger.info(f"Collecting page : {url} :: Start")
     if not url.startswith("https://"):
         url = f"https://{url}"
     r = requests.get(url, params=params, headers=headers)
@@ -46,10 +50,12 @@ def save_one_page(url, params, headers):
     release_page = r.json()
     load_bp_releases(release_page["results"])
     next_page = release_page["next"]
+    logger.info(f"Collecting page : {url} :: Done")
     return next_page, dict()
 
 
 def collect_week(release_meta: ReleaseMeta, bp_token: str) -> bool:
+    logger.info(f"Collecting week : {release_meta} :: Start")
     url = f"{RELEASES_URL}/"
     params = {
         "genre_id": {release_meta.style_id},
@@ -61,16 +67,12 @@ def collect_week(release_meta: ReleaseMeta, bp_token: str) -> bool:
     headers = {"Authorization": f"Bearer {bp_token}"}
     while url:
         url, params = save_one_page(url, params, headers)
+    logger.info(f"Collecting week : {release_meta} :: Done")
     return True
 
 
-def handle_week(release_meta: ReleaseMeta, bp_token: str):
-    logger.info(f"Start :: {release_meta}")
-    collect_week(release_meta, bp_token)
-
-
 def handle_one_release(release_id: int, bp_token: str):
-    logger.info(f"Release :: {release_id} :: Start")
+    logger.info(f"Handle release :: {release_id} :: Start")
     url = f"{RELEASES_URL}/{release_id}/tracks/"
     params = {
         "page": 1,
@@ -83,47 +85,48 @@ def handle_one_release(release_id: int, bp_token: str):
     mongo_db = get_raw_db()
     for track in tracks["results"]:
         load_bp_track(track, mongo_db)
+
     session = get_trans_session()
     for track in tracks["results"]:
         reg_bp_track(track, session=session)
     session.close()
-    logger.info(f"Release :: {release_id} :: Done")
+    logger.info(f"Handle release :: {release_id} :: Done")
 
 
 def collect_tracks(release_meta: ReleaseMeta, bp_token: str):
-    logger.info(f"Start :: {release_meta}")
-    release_ids = collect_bp_releases(
+    logger.info(f"Collect tracks for release :: {release_meta} :: Start")
+    release_pack = collect_bp_releases(
         release_meta.week_start.isoformat(), release_meta.week_end.isoformat()
     )
 
-    for release_id in release_ids:
-        handle_one_release(release_id["id"], bp_token)
-    logger.info(f"Done :: {release_meta}")
+    for one_release in release_pack:
+        handle_one_release(one_release["id"], bp_token)
+    logger.info(f"Collect tracks for release :: {release_meta} :: Done")
 
 
-def collect_spotify_releases(release_meta: ReleaseMeta):
+def collect_spotify_tracks(release_meta: ReleaseMeta):
+    logger.info(f"Collect spotify tracks :: {release_meta} :: Start")
     sp = create_sp()
 
     not_found = []
     tracks_count = 0
-    bp_tracks = collect_bp_tracks(
+    bp_tracks = collect_week_tacks(
         release_meta.week_start.isoformat(), release_meta.week_end.isoformat()
     )
-    mongo_db = get_raw_db()
-    for bp_track in bp_tracks:
-        sp_track = get_track_by_isrc(bp_track["isrc"], sp)
-        if sp_track:
-            sp_track.update(
-                {
-                    "bp_track_id": bp_track["id"],
-                    "bp_year": release_meta.year,
-                    "bp_week": release_meta.week,
-                }
-            )
-            load_sp_track(sp_track, mongo_db)
-            tracks_count += 1
-        else:
-            not_found.append(bp_track)
+    print(len(bp_tracks))
+    print(bp_tracks[0])
+
+    # mongo_db = get_raw_db()
+    # for bp_track in bp_tracks:
+    #     sp_track = get_track_by_isrc(bp_track["isrc"], sp)
+    #     if sp_track:
+    #         load_sp_track(sp_track, mongo_db)
+    #
+    #         connect_track_sp_to_bp(bp_track["id"], sp_track)
+    #
+    #         tracks_count += 1
+    #     else:
+    #         not_found.append(bp_track)
 
     logger.info(f"Not found : {not_found}")
     logger.info(f"Tracks count : {tracks_count}")
@@ -147,7 +150,9 @@ if __name__ == "__main__":
     env.read_env()
     bp_token = env.str("BP_TOKEN")
     release_attr = ReleaseMeta(week=10, year=2023, style_id=1)
-    # handle_week(release_attr, bp_token)
-    collect_tracks(release_attr, bp_token)
-    # collect_spotify_releases(release_attr)
+    logger.info(f"Start handle week : {release_attr} :: Start")
+    # collect_week(release_attr, bp_token)
+    # collect_tracks(release_attr, bp_token)
+    collect_spotify_tracks(release_attr)
     # create_spotify_playlist(release_attr)
+    logger.info(f"Start handle week : {release_attr} :: Done")

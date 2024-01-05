@@ -12,13 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 def load_bp_releases(releases: Iterable, db: MongoClient = None):
+    logger.info("Load raw releases :: Start")
     if db is None:
         db = get_raw_db()
+    success = 0
     for release in releases:
         db["bp_releases"].replace_one({"id": release["id"]}, release, upsert=True)
+        success += 1
+    logger.info(f"Load raw releases : count = {success} :: Done")
 
 
-def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None):
+def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None) -> dict:
     if db is None:
         db = get_raw_db()
     return db.bp_releases.find(
@@ -30,9 +34,7 @@ def load_bp_track(release_track: dict, db: MongoClient = None):
     logger.info(f"Load raw track : {release_track['id']} :: Start")
     if db is None:
         db = get_raw_db()
-    db["bp_tracks"].replace_one(
-        {"id": release_track["id"]}, release_track, upsert=True
-    )
+    db["bp_tracks"].replace_one({"id": release_track["id"]}, release_track, upsert=True)
     logger.info(f"Load raw track : {release_track['id']} :: Done")
 
 

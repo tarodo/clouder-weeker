@@ -108,12 +108,12 @@ def with_session(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         func_sig = signature(func)
-        accepts_session = 'session' in func_sig.parameters
+        accepts_session = "session" in func_sig.parameters
 
-        session_provided = 'session' in kwargs
+        session_provided = "session" in kwargs
         if accepts_session and not session_provided:
             print(f"Session is not provided for {func.__name__}")
-            kwargs['session'] = get_trans_session()
+            kwargs["session"] = get_trans_session()
             session_created = True
         else:
             session_created = False
@@ -122,7 +122,7 @@ def with_session(func):
             result = func(*args, **kwargs)
         finally:
             if session_created:
-                kwargs['session'].close()
+                kwargs["session"].close()
 
         return result
 
