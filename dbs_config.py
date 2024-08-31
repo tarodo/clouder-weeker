@@ -112,7 +112,6 @@ def with_session(func):
 
         session_provided = "session" in kwargs
         if accepts_session and not session_provided:
-            print(f"Session is not provided for {func.__name__}")
             kwargs["session"] = get_trans_session()
             session_created = True
         else:

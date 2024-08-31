@@ -106,27 +106,25 @@ def collect_tracks(release_meta: ReleaseMeta, bp_token: str):
 
 def collect_spotify_tracks(release_meta: ReleaseMeta):
     logger.info(f"Collect spotify tracks :: {release_meta} :: Start")
-    sp = create_sp()
 
     not_found = []
     tracks_count = 0
     bp_tracks = collect_week_tacks(
         release_meta.week_start.isoformat(), release_meta.week_end.isoformat()
     )
-    print(len(bp_tracks))
-    print(bp_tracks[0])
 
-    # mongo_db = get_raw_db()
-    # for bp_track in bp_tracks:
-    #     sp_track = get_track_by_isrc(bp_track["isrc"], sp)
-    #     if sp_track:
-    #         load_sp_track(sp_track, mongo_db)
-    #
-    #         connect_track_sp_to_bp(bp_track["id"], sp_track)
-    #
-    #         tracks_count += 1
-    #     else:
-    #         not_found.append(bp_track)
+    logger.info(f"Tracks count : {len(bp_tracks)}")
+
+    mongo_db = get_raw_db()
+    sp = create_sp()
+    for bp_track in bp_tracks:
+        sp_track = get_track_by_isrc(bp_track["isrc"], sp)
+        if sp_track:
+            load_sp_track(sp_track, mongo_db)
+            connect_track_sp_to_bp(bp_track["id"], sp_track)
+            tracks_count += 1
+        else:
+            not_found.append(bp_track)
 
     logger.info(f"Not found : {not_found}")
     logger.info(f"Tracks count : {tracks_count}")

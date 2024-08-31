@@ -113,6 +113,7 @@ def get_or_create_track_bp(bp_track: dict, artists_ids, session=None) -> int:
 
 @with_session
 def connect_track_sp_to_bp(track_bp_id, sp_track, session=None):
+    logger.debug(f"Connect track SP to BP :: {track_bp_id} :: Start")
     track_sp_id = sp_track.get("id")
     track_sp_date = sp_track.get("album", {}).get("release_date")
     bp_platform_id = get_platform_id("BP")
@@ -131,6 +132,7 @@ def connect_track_sp_to_bp(track_bp_id, sp_track, session=None):
         .first()
     )
     if old_track_sp:
+        logger.info(f"Find old track SP : {old_track_sp.track.id} :: BP track : {old_track_bp.track.id}")
         if old_track_sp.track.id != old_track_bp.track.id:
             raise ValueError("Track is already connected to another BP track")
         return old_track_sp.track.id
