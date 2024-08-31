@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 def setup_logging():
-    log_filename = os.path.join('logs', f'bp_{datetime.now().strftime("%Y-%m-%d")}.log')
+    log_filename = os.path.join('logs', f'{datetime.now().strftime("%Y-%m-%d")}.log')
 
     logging.config.dictConfig(
         {
@@ -20,7 +20,7 @@ def setup_logging():
                     "formatter": "standard",
                     "class": "logging.StreamHandler",
                 },
-                "bp_file": {
+                "logger_file": {
                     "level": "DEBUG",
                     "formatter": "standard",
                     "class": "logging.FileHandler",
@@ -28,8 +28,8 @@ def setup_logging():
                 },
             },
             "loggers": {
-                "": {"handlers": ["default"], "level": "DEBUG", "propagate": False},
-                "bp": {"handlers": ["bp_file"], "level": "DEBUG", "propagate": False},
+                "main": {"handlers": ["default"], "level": "DEBUG", "propagate": False},
+                "clouder": {"handlers": ["default", "logger_file"], "level": "DEBUG", "propagate": False},
             },
         }
     )
