@@ -5,8 +5,9 @@ from src.common import ReleaseMeta
 from src.logging_config import setup_logging
 from environs import Env
 
-from src.mongo_adapter import collect_bp_releases, save_data_mongo_by_id, collect_releases_tracks
-from src.sp_adapter import get_track_by_isrc
+from src.mongo_adapter import collect_bp_releases, save_data_mongo_by_id, collect_releases_tracks, \
+    collect_sp_week_tracks
+from src.sp_adapter import get_track_by_isrc, create_playlist_with_tracks, create_playlist
 
 setup_logging()
 logger = logging.getLogger("main")
@@ -81,6 +82,26 @@ def sp_tracks_processing(release_attr: ReleaseMeta, bp_tracks: list) -> None:
     logger.info(f"Collect spotify tracks :: {clouder_week} :: BP {len(bp_tracks)} :: SP {found_cnt} :: Done")
 
 
+def processing_sp_playlists(release_attr: ReleaseMeta) -> None:
+    """Create and fill SP playlists based on SP tracks of the week."""
+    clouder_week = release_attr.clouder_week
+    logger.info(f"Create spotify playlists :: {clouder_week} :: Start")
+
+    new_tracks, old_tracks = collect_sp_week_tracks(clouder_week, release_attr.week_period[0], release_attr.week_period[1])
+
+    new_playlist_name = release_attr.generate_sp_playlist_name("new")
+    new_playlist_id = create_playlist_with_tracks(new_playlist_name, new_tracks)
+    old_playlist_name = release_attr.generate_sp_playlist_name("old")
+    old_playlist_id = create_playlist_with_tracks(old_playlist_name, old_tracks)
+
+    release_attr.set_sp_playlist("new", new_playlist_id)
+    release_attr.set_sp_playlist("old", old_playlist_id)
+    for pl in release_attr.extra_playlists:
+        pl_id = create_playlist(release_attr.generate_sp_playlist_name(pl))
+        release_attr.set_sp_playlist(pl, pl_id)
+    logger.info(f"Create spotify playlists :: {clouder_week} :: Done")
+
+
 if __name__ == "__main__":
     env = Env()
     env.read_env()
@@ -95,4 +116,7 @@ if __name__ == "__main__":
 
     sp_tracks_processing(release_meta, tracks_bp)
 
+    save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
+
+    processing_sp_playlists(release_meta)
     save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")

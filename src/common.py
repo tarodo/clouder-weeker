@@ -1,5 +1,3 @@
-from typing import Dict
-
 from src.utils import get_start_end_dates
 
 BP_STYLES = {
@@ -27,9 +25,15 @@ class ReleaseMeta:
             "sp_tracks": None,
             "sp_not_found": None,
         }
-        self._base_playlists = ["New", "Old"]
+        self._base_playlists = ["new", "old"]
 
-        self._sp_playlists = {self.generate_sp_playlist_name(pl): None for pl in self._playlists_names}
+        self._sp_playlists = {
+            self.generate_sp_playlist_name(pl): None for pl in self._playlists_names
+        }
+
+    @property
+    def week_period(self) -> tuple[str, str]:
+        return self._week_start.isoformat(), self._week_end.isoformat()
 
     @property
     def style_name(self) -> str:
@@ -39,6 +43,10 @@ class ReleaseMeta:
     @property
     def _playlists_names(self) -> list[str]:
         return self._base_playlists + PLAYLISTS[self.style_name]
+
+    @property
+    def extra_playlists(self) -> list[str]:
+        return PLAYLISTS[self.style_name]
 
     @property
     def _base_sp_pl_name(self) -> str:
@@ -61,11 +69,10 @@ class ReleaseMeta:
     def sp_playlists(self) -> dict[str, str | None]:
         return self._sp_playlists
 
-
     def __str__(self):
         return f"{self.style_name} :: {self._year} :: {self._week}"
 
-    def data_to_mongo(self):
+    def data_to_mongo(self) -> dict:
         return {
             "week": self._week,
             "year": self._year,
@@ -74,5 +81,5 @@ class ReleaseMeta:
             "week_end": self._week_end.isoformat(),
             "id": self.clouder_week,
             "sp_playlists": self.sp_playlists,
-            "statistic": self._statistic
+            "statistic": self._statistic,
         }

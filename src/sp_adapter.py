@@ -1,5 +1,9 @@
+import logging
+
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyOAuth
+
+logger = logging.getLogger("sp")
 
 
 def create_sp():
@@ -23,10 +27,14 @@ def create_playlist(title: str) -> (str, str):
     sp = create_sp()
     user_id = sp.me()["id"]
     playlist = sp.user_playlist_create(user_id, title, public=False)
-    return playlist["id"], playlist["external_urls"]["spotify"]
+    logger.info(f"Playlist created : {playlist['id']} : {playlist['name']}")
+    return playlist["id"]
 
 
 def add_tracks(playlist_id: str, tracks_ids: list[str]):
+    logger.info(
+        f"Tracks added to playlist : {playlist_id} : {len(tracks_ids)} :: Start"
+    )
     sp = create_sp()
     pack_size = 100
     parts = [
@@ -34,11 +42,12 @@ def add_tracks(playlist_id: str, tracks_ids: list[str]):
     ]
     for part in parts:
         sp.playlist_add_items(playlist_id, part)
+        logger.info(f"Tracks added to playlist : {playlist_id} : {len(part)}")
+    logger.info(f"Tracks added to playlist : {playlist_id} : {len(tracks_ids)} :: Done")
     return True
 
 
-def create_playlists(clouder_week: str, sp_tracks: list[dict]):
-    playlist_id, playlist_url = create_playlist(f"Clouder Week {clouder_week}")
-    tracks_ids = [track["uri"] for track in sp_tracks]
-    add_tracks(playlist_id, tracks_ids)
-    return playlist_url
+def create_playlist_with_tracks(playlist_name: str, sp_tracks: list[str]):
+    playlist_id = create_playlist(playlist_name)
+    add_tracks(playlist_id, sp_tracks)
+    return playlist_id

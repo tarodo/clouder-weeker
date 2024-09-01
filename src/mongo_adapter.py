@@ -1,4 +1,5 @@
 import logging
+from typing import Any, List, Tuple
 
 from pymongo import MongoClient, UpdateOne
 
@@ -65,6 +66,41 @@ def collect_releases_tracks(release_ids: list, db: MongoClient = None) -> list:
             )
         )
         return result
+    finally:
+        if close_connection:
+            db.client.close()
+
+
+def collect_sp_week_tracks(
+    clouder_week: str, week_start: str, week_end: str, db: MongoClient = None
+) -> tuple[list[Any], list[Any]]:
+    """Collect new week tracks from MongoDB"""
+    close_connection = False
+    if db is None:
+        db = get_mongo_conn()
+        close_connection = True
+    try:
+        new_tracks = list(
+            db.sp_tracks.find(
+                {
+                    "clouder_week": clouder_week,
+                    "album.release_date": {"$gte": week_start},
+                },
+                {"_id": 0, "uri": 1},
+            )
+        )
+        new_tracks = [item["uri"] for item in new_tracks]
+        old_tracks = list(
+            db.sp_tracks.find(
+                {
+                    "clouder_week": clouder_week,
+                    "album.release_date": {"$lt": week_start},
+                },
+                {"_id": 0, "uri": 1},
+            )
+        )
+        old_tracks = [item["uri"] for item in old_tracks]
+        return new_tracks, old_tracks
     finally:
         if close_connection:
             db.client.close()

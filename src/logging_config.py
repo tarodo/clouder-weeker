@@ -44,6 +44,11 @@ def setup_logging():
                     "level": log_level,
                     "propagate": False,
                 },
+                "sp": {
+                    "handlers": ["default", "logger_file"],
+                    "level": log_level,
+                    "propagate": False,
+                },
             },
         }
     )
