@@ -14,7 +14,10 @@ class ReleaseMeta:
         # Calculate meta additional fields
         self.week_start, self.week_end = get_start_end_dates(self.year, self.week)
         self.style_name = BP_STYLES.get(self.style_id)
+        self.clouder_week = f"{self.style_name}_{self.year}_{self.week}"
         self.playlist_name = f"{self.style_name} :: {self.year} :: {self.week}"
+        self.playlist_name_new = f"{self.style_name} :: {self.year} :: {self.week} :: NEW"
+        self.playlist_name_old = f"{self.style_name} :: {self.year} :: {self.week} :: OLD"
 
     def __str__(self):
         return f"{self.style_name} :: {self.year} :: {self.week}"

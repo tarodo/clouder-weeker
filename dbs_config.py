@@ -92,7 +92,6 @@ def init_raw_db(db: MongoClient = None):
 
     db["sp_tracks"].create_index([("id", -1)], unique=True)
     db["sp_tracks"].create_index([("bp_year", -1), ("bp_week", -1)])
-    db["sp_tracks"].create_index([("external_ids.isrc", 1)])
     db["sp_tracks"].create_index([("album.release_date", -1)])
 
 

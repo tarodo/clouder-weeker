@@ -4,7 +4,6 @@ from typing import Generator
 import requests
 
 from src.common import ReleaseMeta
-from src.mongo_adapter import save_data_mongo
 
 logger = logging.getLogger("bp")
 

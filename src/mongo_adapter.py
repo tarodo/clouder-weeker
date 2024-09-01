@@ -6,7 +6,7 @@ from src.db_conf import get_mongo_conn
 logger = logging.getLogger("mongo")
 
 
-def save_data_mongo(data, collection_name: str, db: MongoClient = None):
+def save_data_mongo_by_id(data, collection_name: str, db: MongoClient = None):
     """Save data to MongoDB by id in collection"""
     logger.info(f"Save data : {collection_name} : count = {len(data)} :: Start")
     close_connection = False
@@ -50,23 +50,6 @@ def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None) 
         if close_connection:
             db.client.close()
 
-def collect_one_release_tracks(release_id: int, db: MongoClient = None) -> list:
-    """Collect tracks from MongoDB"""
-    close_connection = False
-    if db is None:
-        db = get_mongo_conn()
-        close_connection = True
-    try:
-        result = list(
-            db.bp_tracks.find(
-                {"release.id": release_id},
-                {"_id": 0, "id": 1, "isrc": 1, "name": 1}
-            )
-        )
-        return result
-    finally:
-        if close_connection:
-            db.client.close()
 
 def collect_releases_tracks(release_ids: list, db: MongoClient = None) -> list:
     """Collect tracks from MongoDB"""
@@ -78,7 +61,7 @@ def collect_releases_tracks(release_ids: list, db: MongoClient = None) -> list:
         result = list(
             db.bp_tracks.find(
                 {"release.id": {"$in": release_ids}},
-                {"_id": 0, "id": 1, "isrc": 1, "name": 1}
+                {"_id": 0, "id": 1, "isrc": 1}
             )
         )
         return result
