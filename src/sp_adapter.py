@@ -35,3 +35,10 @@ def add_tracks(playlist_id: str, tracks_ids: list[str]):
     for part in parts:
         sp.playlist_add_items(playlist_id, part)
     return True
+
+
+def create_playlists(clouder_week: str, sp_tracks: list[dict]):
+    playlist_id, playlist_url = create_playlist(f"Clouder Week {clouder_week}")
+    tracks_ids = [track["uri"] for track in sp_tracks]
+    add_tracks(playlist_id, tracks_ids)
+    return playlist_url

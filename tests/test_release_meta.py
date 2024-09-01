@@ -9,7 +9,7 @@ def test_release_meta_initialization():
     # Verify that attributes are correctly initialized
     assert release.week == 1
     assert release.year == 2023
-    assert release.style_id == 1
+    assert release._style_id == 1
     assert release.week_start == datetime(2023, 1, 2).date()
     assert release.week_end == datetime(2023, 1, 8).date()
     assert release.style_name == BP_STYLES[1]

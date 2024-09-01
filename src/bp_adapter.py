@@ -35,7 +35,7 @@ def collect_releases(
     )
     url = f"{bp_url}/"
     params = {
-        "genre_id": {release_meta.style_id},
+        "genre_id": {release_meta._style_id},
         "publish_date": f"{release_meta.week_start}:{release_meta.week_end}",
         "page": 1,
         "per_page": 100,
