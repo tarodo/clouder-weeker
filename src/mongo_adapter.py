@@ -53,7 +53,9 @@ def collect_bp_releases(clouder_week: str, db: MongoClient = None) -> list:
             db.client.close()
 
 
-def collect_releases_tracks(clouder_week: str, genre_id: int, db: MongoClient = None) -> tuple[list[dict], list[dict]]:
+def collect_releases_tracks(
+    clouder_week: str, genre_id: int, db: MongoClient = None
+) -> tuple[list[dict], list[dict]]:
     """Collect tracks from MongoDB"""
     close_connection = False
     if db is None:
@@ -62,7 +64,8 @@ def collect_releases_tracks(clouder_week: str, genre_id: int, db: MongoClient = 
     try:
         actual = list(
             db.bp_tracks.find(
-                {"clouder_week": clouder_week, "genre.id": genre_id}, {"_id": 0, "id": 1, "isrc": 1}
+                {"clouder_week": clouder_week, "genre.id": genre_id},
+                {"_id": 0, "id": 1, "isrc": 1},
             )
         )
         not_actual = list(

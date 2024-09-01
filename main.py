@@ -1,20 +1,23 @@
 import logging
 import time
 
-from src.bp_adapter import handle_one_release, collect_releases
-from src.common import ReleaseMeta
-from src.logging_config import setup_logging
 from environs import Env
 
-from src.mongo_adapter import collect_bp_releases, save_data_mongo_by_id, collect_releases_tracks, \
-    collect_sp_week_tracks
-from src.sp_adapter import get_track_by_isrc, create_playlist_with_tracks, create_playlist
+from src.bp_adapter import collect_releases, handle_one_release
+from src.common import ReleaseMeta
+from src.logging_config import setup_logging
+from src.mongo_adapter import (collect_bp_releases, collect_releases_tracks,
+                               collect_sp_week_tracks, save_data_mongo_by_id)
+from src.sp_adapter import (create_playlist, create_playlist_with_tracks,
+                            get_track_by_isrc)
 
 setup_logging()
 logger = logging.getLogger("main")
 
 
-def bp_release_processing(release_attr: ReleaseMeta, bp_url: str, bp_token: str) -> None:
+def bp_release_processing(
+    release_attr: ReleaseMeta, bp_url: str, bp_token: str
+) -> None:
     """Collect and save BP releases, return a list of release IDs."""
     logger.info(f"Collect BP releases :: {release_attr.clouder_week} :: Start")
     release_cnt = 0
@@ -28,7 +31,9 @@ def bp_release_processing(release_attr: ReleaseMeta, bp_url: str, bp_token: str)
     logger.info(f"Collect BP releases :: {release_attr.clouder_week} :: Done")
 
 
-def bp_release_tracks_processing(release_attr: ReleaseMeta, bp_url: str, bp_token: str) -> None:
+def bp_release_tracks_processing(
+    release_attr: ReleaseMeta, bp_url: str, bp_token: str
+) -> None:
     """Collect and save tracks for each BP release."""
     logger.info(f"Collect BP tracks :: {release_attr.clouder_week} :: Start")
     release_ids = collect_bp_releases(release_attr.clouder_week)
@@ -54,7 +59,9 @@ def bp_tracks_processing(release_attr: ReleaseMeta, bp_url: str, bp_token: str) 
     logger.info(f"Collect BP clear tracks :: {release_attr.clouder_week} :: Done")
 
 
-def sp_tracks_pack_processing(bp_tracks: list[dict], clouder_week: str, is_genre: bool = True) -> list:
+def sp_tracks_pack_processing(
+    bp_tracks: list[dict], clouder_week: str, is_genre: bool = True
+) -> list:
     not_found = []
     sp_tracks = []
 
@@ -63,8 +70,8 @@ def sp_tracks_pack_processing(bp_tracks: list[dict], clouder_week: str, is_genre
         if not sp_track:
             not_found.append(bp_track["id"])
             continue
-        sp_track.pop('available_markets', None)
-        sp_track['album'].pop('available_markets', None)
+        sp_track.pop("available_markets", None)
+        sp_track["album"].pop("available_markets", None)
         sp_track["bp_id"] = bp_track["id"]
         sp_track["clouder_week"] = clouder_week
         sp_track["clouder_genre"] = is_genre
@@ -80,10 +87,13 @@ def sp_tracks_pack_processing(bp_tracks: list[dict], clouder_week: str, is_genre
 
     return not_found
 
+
 def sp_tracks_processing(release_attr: ReleaseMeta) -> None:
     """Collect and save SP tracks based on BP tracks."""
     clouder_week = release_attr.clouder_week
-    genre_tracks, not_genre_tracks = collect_releases_tracks(clouder_week, release_attr.style_id)
+    genre_tracks, not_genre_tracks = collect_releases_tracks(
+        clouder_week, release_attr.style_id
+    )
 
     release_attr.set_statistic("bp_genre_tracks", len(genre_tracks))
     release_attr.set_statistic("bp_not_genre_tracks", len(not_genre_tracks))
@@ -95,15 +105,21 @@ def sp_tracks_processing(release_attr: ReleaseMeta) -> None:
     not_found += sp_tracks_pack_processing(not_genre_tracks, clouder_week, False)
 
     if not_found:
-        not_found_week = [{"id": clouder_week, "not_found": not_found},]
+        not_found_week = [
+            {"id": clouder_week, "not_found": not_found},
+        ]
         save_data_mongo_by_id(not_found_week, "not_found_sp_tracks")
-        logger.warning(f"Spotify tracks not found :: {clouder_week} :: Count {len(not_found)}")
+        logger.warning(
+            f"Spotify tracks not found :: {clouder_week} :: Count {len(not_found)}"
+        )
 
     found_cnt = full_count - len(not_found)
     release_attr.set_statistic("sp_tracks", found_cnt)
     release_attr.set_statistic("sp_not_found", len(not_found))
 
-    logger.info(f"Collect spotify tracks :: {clouder_week} :: BP {full_count} :: SP {found_cnt} :: Done")
+    logger.info(
+        f"Collect spotify tracks :: {clouder_week} :: BP {full_count} :: SP {found_cnt} :: Done"
+    )
 
 
 def processing_sp_playlists(release_attr: ReleaseMeta) -> None:
@@ -111,14 +127,18 @@ def processing_sp_playlists(release_attr: ReleaseMeta) -> None:
     clouder_week = release_attr.clouder_week
     logger.info(f"Create spotify playlists :: {clouder_week} :: Start")
 
-    new_tracks, old_tracks, not_genre_tracks = collect_sp_week_tracks(clouder_week, release_attr.week_start)
+    new_tracks, old_tracks, not_genre_tracks = collect_sp_week_tracks(
+        clouder_week, release_attr.week_start
+    )
 
     new_playlist_name = release_attr.generate_sp_playlist_name("new")
     new_playlist_id = create_playlist_with_tracks(new_playlist_name, new_tracks)
     old_playlist_name = release_attr.generate_sp_playlist_name("old")
     old_playlist_id = create_playlist_with_tracks(old_playlist_name, old_tracks)
     not_genre_playlist_name = release_attr.generate_sp_playlist_name("not")
-    not_genre_playlist_id = create_playlist_with_tracks(not_genre_playlist_name, not_genre_tracks)
+    not_genre_playlist_id = create_playlist_with_tracks(
+        not_genre_playlist_name, not_genre_tracks
+    )
 
     release_attr.set_sp_playlist("new", new_playlist_id)
     release_attr.set_sp_playlist("old", old_playlist_id)
@@ -148,4 +168,3 @@ if __name__ == "__main__":
 
     processing_sp_playlists(release_meta)
     save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
-
