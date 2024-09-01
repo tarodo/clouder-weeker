@@ -49,3 +49,39 @@ def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None) 
     finally:
         if close_connection:
             db.client.close()
+
+def collect_one_release_tracks(release_id: int, db: MongoClient = None) -> list:
+    """Collect tracks from MongoDB"""
+    close_connection = False
+    if db is None:
+        db = get_mongo_conn()
+        close_connection = True
+    try:
+        result = list(
+            db.bp_tracks.find(
+                {"release.id": release_id},
+                {"_id": 0, "id": 1, "isrc": 1, "name": 1}
+            )
+        )
+        return result
+    finally:
+        if close_connection:
+            db.client.close()
+
+def collect_releases_tracks(release_ids: list, db: MongoClient = None) -> list:
+    """Collect tracks from MongoDB"""
+    close_connection = False
+    if db is None:
+        db = get_mongo_conn()
+        close_connection = True
+    try:
+        result = list(
+            db.bp_tracks.find(
+                {"release.id": {"$in": release_ids}},
+                {"_id": 0, "id": 1, "isrc": 1, "name": 1}
+            )
+        )
+        return result
+    finally:
+        if close_connection:
+            db.client.close()
