@@ -1,4 +1,5 @@
 import logging
+import time
 
 from src.bp_adapter import handle_one_release, collect_releases
 from src.common import ReleaseMeta
@@ -8,7 +9,6 @@ from environs import Env
 from src.mongo_adapter import collect_bp_releases, save_data_mongo_by_id, collect_releases_tracks, \
     collect_sp_week_tracks
 from src.sp_adapter import get_track_by_isrc, create_playlist_with_tracks, create_playlist
-from trans_models import Track
 
 setup_logging()
 logger = logging.getLogger("main")
@@ -73,6 +73,7 @@ def sp_tracks_pack_processing(bp_tracks: list[dict], clouder_week: str, is_genre
         if len(sp_tracks) >= 100:
             save_data_mongo_by_id(sp_tracks, "sp_tracks")
             sp_tracks.clear()
+            time.sleep(60)
 
     if sp_tracks:
         save_data_mongo_by_id(sp_tracks, "sp_tracks")
@@ -110,15 +111,18 @@ def processing_sp_playlists(release_attr: ReleaseMeta) -> None:
     clouder_week = release_attr.clouder_week
     logger.info(f"Create spotify playlists :: {clouder_week} :: Start")
 
-    new_tracks, old_tracks = collect_sp_week_tracks(clouder_week, release_attr.week_period[0], release_attr.week_period[1])
+    new_tracks, old_tracks, not_genre_tracks = collect_sp_week_tracks(clouder_week, release_attr.week_start)
 
     new_playlist_name = release_attr.generate_sp_playlist_name("new")
     new_playlist_id = create_playlist_with_tracks(new_playlist_name, new_tracks)
     old_playlist_name = release_attr.generate_sp_playlist_name("old")
     old_playlist_id = create_playlist_with_tracks(old_playlist_name, old_tracks)
+    not_genre_playlist_name = release_attr.generate_sp_playlist_name("not")
+    not_genre_playlist_id = create_playlist_with_tracks(not_genre_playlist_name, not_genre_tracks)
 
     release_attr.set_sp_playlist("new", new_playlist_id)
     release_attr.set_sp_playlist("old", old_playlist_id)
+    release_attr.set_sp_playlist("not", not_genre_playlist_id)
     for pl in release_attr.extra_playlists:
         pl_id = create_playlist(release_attr.generate_sp_playlist_name(pl))
         release_attr.set_sp_playlist(pl, pl_id)
@@ -137,14 +141,11 @@ if __name__ == "__main__":
     # bp_release_processing(release_meta, bp_url, bp_token)
     # bp_release_tracks_processing(release_meta, bp_url, bp_token)
     # bp_tracks_processing(release_meta, bp_url, bp_token)
-    #
-    # sp_tracks_processing(release_meta)
 
-    # save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
-    #
-    # processing_sp_playlists(release_meta)
-    # save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
+    sp_tracks_processing(release_meta)
 
+    save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
 
-    ttt, rrr = collect_releases_tracks(release_meta.clouder_week, release_meta.style_id)
-    print(len(ttt), len(rrr))
+    processing_sp_playlists(release_meta)
+    save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
+

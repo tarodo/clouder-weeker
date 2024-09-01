@@ -20,7 +20,7 @@ class ReleaseMeta:
         self._week_start, self._week_end = get_start_end_dates(self._year, self._week)
 
         self._statistic = {}
-        self._base_playlists = ["new", "old"]
+        self._base_playlists = ["new", "old", "not"]
 
         self._sp_playlists = {
             self.generate_sp_playlist_name(pl): None for pl in self._playlists_names
