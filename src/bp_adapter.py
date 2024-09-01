@@ -8,7 +8,10 @@ from src.common import ReleaseMeta
 logger = logging.getLogger("bp")
 
 
-def bp_request(url, params, bp_token):
+def bp_request(
+    url: str, params: dict[str, str], bp_token: str
+) -> tuple[list[dict], str, dict]:
+    """Make a request to the BP API and return results, next page URL, and updated params."""
     logger.info(f"Collecting page : {url} :: Start")
     if not url.startswith("https://"):
         url = f"https://{url}"
@@ -26,6 +29,7 @@ def bp_request(url, params, bp_token):
 def collect_releases(
     release_meta: ReleaseMeta, bp_url: str, bp_token: str
 ) -> Generator[list[dict], None, None]:
+    """Generate and yield BP releases for a given week."""
     logger.info(
         f"Collecting week : {release_meta} : {release_meta.week_start} : {release_meta.week_end} :: Start"
     )
@@ -44,7 +48,10 @@ def collect_releases(
     logger.info(f"Collecting week : {release_meta} :: Done")
 
 
-def handle_one_release(release_id: int, bp_url: str, bp_token: str):
+def handle_one_release(
+    release_id: int, bp_url: str, bp_token: str
+) -> Generator[list[dict], None, None]:
+    """Generate and yield tracks for a specific BP release."""
     logger.info(f"Handle release :: {release_id} :: Start")
     url = f"{bp_url}/{release_id}/tracks/"
     params = {

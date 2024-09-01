@@ -7,7 +7,7 @@ from src.db_conf import get_mongo_conn
 logger = logging.getLogger("mongo")
 
 
-def save_data_mongo_by_id(data, collection_name: str, db: MongoClient = None):
+def save_data_mongo_by_id(data, collection_name: str, db: MongoClient = None) -> None:
     """Save data to MongoDB by id in collection"""
     logger.info(f"Save data : {collection_name} : count = {len(data)} :: Start")
     close_connection = False

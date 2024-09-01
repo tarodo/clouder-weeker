@@ -6,7 +6,7 @@ from datetime import datetime
 
 def setup_logging():
     log_filename = os.path.join("logs", f'{datetime.now().strftime("%Y-%m-%d")}.log')
-
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
     logging.config.dictConfig(
         {
             "version": 1,
@@ -17,12 +17,12 @@ def setup_logging():
             },
             "handlers": {
                 "default": {
-                    "level": "DEBUG",
+                    "level": log_level,
                     "formatter": "standard",
                     "class": "logging.StreamHandler",
                 },
                 "logger_file": {
-                    "level": "DEBUG",
+                    "level": log_level,
                     "formatter": "standard",
                     "class": "logging.FileHandler",
                     "filename": log_filename,
@@ -31,17 +31,17 @@ def setup_logging():
             "loggers": {
                 "main": {
                     "handlers": ["default", "logger_file"],
-                    "level": "DEBUG",
+                    "level": log_level,
                     "propagate": False,
                 },
                 "bp": {
                     "handlers": ["default", "logger_file"],
-                    "level": "DEBUG",
+                    "level": log_level,
                     "propagate": False,
                 },
                 "mongo": {
                     "handlers": ["default", "logger_file"],
-                    "level": "DEBUG",
+                    "level": log_level,
                     "propagate": False,
                 },
             },
