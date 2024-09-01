@@ -1,28 +1,30 @@
 import logging
+from typing import Generator
 
 import requests
 
 from src.common import ReleaseMeta
-from src.mongo_adapter import save_bp_releases, save_bp_page_releases
+from src.mongo_adapter import save_data_mongo
 
-logger = logging.getLogger("clouder")
+logger = logging.getLogger("bp")
 
 
-def get_one_page_release(url, params, headers):
+def bp_request(url, params, bp_token):
     logger.info(f"Collecting page : {url} :: Start")
     if not url.startswith("https://"):
         url = f"https://{url}"
+    headers = {"Authorization": f"Bearer {bp_token}"}
     r = requests.get(url, params=params, headers=headers)
     r.raise_for_status()
-    release_page = r.json()
-    next_page = release_page["next"]
-    cur_page = release_page["page"]
-    full_count = release_page["count"]
+    one_page = r.json()
+    next_page = one_page["next"]
+    cur_page = one_page["page"]
+    full_count = one_page["count"]
     logger.info(f"Collecting page : {cur_page=} : {full_count=} :: Done")
-    return release_page["results"], next_page, dict()
+    return one_page["results"], next_page, dict()
 
 
-def collect_releases(release_meta: ReleaseMeta, bp_url: str, bp_token: str) -> bool:
+def collect_releases(release_meta: ReleaseMeta, bp_url: str, bp_token: str) -> Generator[list[dict], None, None]:
     logger.info(f"Collecting week : {release_meta} : {release_meta.week_start} : {release_meta.week_end} :: Start")
     url = f"{bp_url}/"
     params = {
@@ -32,9 +34,22 @@ def collect_releases(release_meta: ReleaseMeta, bp_url: str, bp_token: str) -> b
         "per_page": 100,
         "order_by": "-publish_date",
     }
-    headers = {"Authorization": f"Bearer {bp_token}"}
     while url:
-        releases, url, params = get_one_page_release(url, params, headers)
-        save_bp_page_releases(releases)
+        releases, url, params = bp_request(url, params, bp_token)
+        yield releases
+
     logger.info(f"Collecting week : {release_meta} :: Done")
-    return True
+
+
+def handle_one_release(release_id: int, bp_url: str, bp_token: str):
+    logger.info(f"Handle release :: {release_id} :: Start")
+    url = f"{bp_url}/{release_id}/tracks/"
+    params = {
+        "page": 1,
+        "per_page": 100,
+    }
+    while url:
+        tracks, url, params = bp_request(url, params, bp_token)
+        yield tracks
+
+    logger.info(f"Handle release :: {release_id} :: Done")

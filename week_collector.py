@@ -150,7 +150,7 @@ if __name__ == "__main__":
     release_attr = ReleaseMeta(week=10, year=2023, style_id=1)
     logger.info(f"Start handle week : {release_attr} :: Start")
     collect_week(release_attr, bp_token)
-    # collect_tracks(release_attr, bp_token)
+    collect_tracks(release_attr, bp_token)
     collect_spotify_tracks(release_attr)
     # create_spotify_playlist(release_attr)
     logger.info(f"Start handle week : {release_attr} :: Done")

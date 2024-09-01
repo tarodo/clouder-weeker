@@ -28,17 +28,9 @@ def setup_logging():
                 },
             },
             "loggers": {
-                "main": {"handlers": ["default"], "level": "DEBUG", "propagate": False},
-                "clouder": {"handlers": ["default", "logger_file"], "level": "DEBUG", "propagate": False},
+                "main": {"handlers": ["default", "logger_file"], "level": "DEBUG", "propagate": False},
+                "bp": {"handlers": ["default", "logger_file"], "level": "DEBUG", "propagate": False},
+                "mongo": {"handlers": ["default", "logger_file"], "level": "DEBUG", "propagate": False},
             },
         }
     )
-
-setup_logging()
-
-bp_logger = logging.getLogger('bp')
-
-bp_logger.debug('This is a debug message')
-bp_logger.info('This is an info message')
-bp_logger.warning('This is a warning message')
-bp_logger.error('This is an error message')
