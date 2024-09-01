@@ -34,7 +34,7 @@ def save_data_mongo_by_id(data, collection_name: str, db: MongoClient = None) ->
             db.client.close()
 
 
-def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None) -> list:
+def collect_bp_releases(clouder_week: str, db: MongoClient = None) -> list:
     """Collect release ids from MongoDB"""
     close_connection = False
     if db is None:
@@ -43,7 +43,7 @@ def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None) 
     try:
         result = list(
             db.bp_releases.find(
-                {"publish_date": {"$gte": week_start, "$lte": week_end}},
+                {"clouder_week": clouder_week},
                 {"_id": 0, "id": 1},
             )
         )
@@ -53,26 +53,32 @@ def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None) 
             db.client.close()
 
 
-def collect_releases_tracks(release_ids: list, db: MongoClient = None) -> list:
+def collect_releases_tracks(clouder_week: str, genre_id: int, db: MongoClient = None) -> tuple[list[dict], list[dict]]:
     """Collect tracks from MongoDB"""
     close_connection = False
     if db is None:
         db = get_mongo_conn()
         close_connection = True
     try:
-        result = list(
+        actual = list(
             db.bp_tracks.find(
-                {"release.id": {"$in": release_ids}}, {"_id": 0, "id": 1, "isrc": 1}
+                {"clouder_week": clouder_week, "genre.id": genre_id}, {"_id": 0, "id": 1, "isrc": 1}
             )
         )
-        return result
+        not_actual = list(
+            db.bp_tracks.find(
+                {"clouder_week": clouder_week, "genre.id": {"$ne": genre_id}},
+                {"_id": 0, "id": 1, "isrc": 1},
+            )
+        )
+        return actual, not_actual
     finally:
         if close_connection:
             db.client.close()
 
 
 def collect_sp_week_tracks(
-    clouder_week: str, week_start: str, week_end: str, db: MongoClient = None
+    clouder_week: str, week_start: str, db: MongoClient = None
 ) -> tuple[list[Any], list[Any]]:
     """Collect new week tracks from MongoDB"""
     close_connection = False

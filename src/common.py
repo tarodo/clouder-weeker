@@ -19,12 +19,7 @@ class ReleaseMeta:
 
         self._week_start, self._week_end = get_start_end_dates(self._year, self._week)
 
-        self._statistic = {
-            "bp_releases": None,
-            "bp_tracks": None,
-            "sp_tracks": None,
-            "sp_not_found": None,
-        }
+        self._statistic = {}
         self._base_playlists = ["new", "old"]
 
         self._sp_playlists = {
@@ -32,8 +27,20 @@ class ReleaseMeta:
         }
 
     @property
+    def style_id(self) -> int:
+        return self._style_id
+
+    @property
     def week_period(self) -> tuple[str, str]:
         return self._week_start.isoformat(), self._week_end.isoformat()
+
+    @property
+    def week_start(self) -> str:
+        return self._week_start.isoformat()
+
+    @property
+    def week_end(self) -> str:
+        return self._week_end.isoformat()
 
     @property
     def style_name(self) -> str:

@@ -27,15 +27,15 @@ def bp_request(
 
 
 def collect_releases(
-    release_meta: ReleaseMeta, bp_url: str, bp_token: str
+    release_meta: ReleaseMeta, bp_url: str, bp_token: str, info_type: str = "releases"
 ) -> Generator[list[dict], None, None]:
     """Generate and yield BP releases for a given week."""
     logger.info(
-        f"Collecting week : {release_meta} : {release_meta.week_start} : {release_meta.week_end} :: Start"
+        f"Collecting week : {info_type} : {release_meta} : {release_meta.week_period} :: Start"
     )
-    url = f"{bp_url}/"
+    url = f"{bp_url}/{info_type}/"
     params = {
-        "genre_id": {release_meta._style_id},
+        "genre_id": {release_meta.style_id},
         "publish_date": f"{release_meta.week_start}:{release_meta.week_end}",
         "page": 1,
         "per_page": 100,
@@ -45,7 +45,7 @@ def collect_releases(
         releases, url, params = bp_request(url, params, bp_token)
         yield releases
 
-    logger.info(f"Collecting week : {release_meta} :: Done")
+    logger.info(f"Collecting week : {info_type} : {release_meta} :: Done")
 
 
 def handle_one_release(
@@ -53,7 +53,7 @@ def handle_one_release(
 ) -> Generator[list[dict], None, None]:
     """Generate and yield tracks for a specific BP release."""
     logger.info(f"Handle release :: {release_id} :: Start")
-    url = f"{bp_url}/{release_id}/tracks/"
+    url = f"{bp_url}/releases/{release_id}/tracks/"
     params = {
         "page": 1,
         "per_page": 100,
