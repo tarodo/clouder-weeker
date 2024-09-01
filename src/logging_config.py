@@ -3,8 +3,9 @@ import logging.config
 import os
 from datetime import datetime
 
+
 def setup_logging():
-    log_filename = os.path.join('logs', f'{datetime.now().strftime("%Y-%m-%d")}.log')
+    log_filename = os.path.join("logs", f'{datetime.now().strftime("%Y-%m-%d")}.log')
 
     logging.config.dictConfig(
         {
@@ -28,9 +29,21 @@ def setup_logging():
                 },
             },
             "loggers": {
-                "main": {"handlers": ["default", "logger_file"], "level": "DEBUG", "propagate": False},
-                "bp": {"handlers": ["default", "logger_file"], "level": "DEBUG", "propagate": False},
-                "mongo": {"handlers": ["default", "logger_file"], "level": "DEBUG", "propagate": False},
+                "main": {
+                    "handlers": ["default", "logger_file"],
+                    "level": "DEBUG",
+                    "propagate": False,
+                },
+                "bp": {
+                    "handlers": ["default", "logger_file"],
+                    "level": "DEBUG",
+                    "propagate": False,
+                },
+                "mongo": {
+                    "handlers": ["default", "logger_file"],
+                    "level": "DEBUG",
+                    "propagate": False,
+                },
             },
         }
     )

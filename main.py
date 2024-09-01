@@ -13,14 +13,17 @@ logger = logging.getLogger("main")
 
 
 def bp_release_processing(release_attr: ReleaseMeta, bp_url: str, bp_token: str):
+    logger.info(f"Collect bp releases :: {release_attr.clouder_week} :: Start")
     for releases in collect_releases(release_attr, bp_url, bp_token):
         for release in releases:
             release["clouder_week"] = release_attr.clouder_week
         save_data_mongo_by_id(releases, "bp_releases")
+    logger.info(f"Collect bp releases :: {release_attr.clouder_week} :: Done")
     return collect_bp_releases(release_attr.week_start.isoformat(), release_attr.week_end.isoformat())
 
 
 def bp_tracks_processing(release_attr: ReleaseMeta, release_ids: list, bp_url: str, bp_token: str) -> list:
+    logger.info(f"Collect bp tracks :: {release_attr.clouder_week} :: Start")
     for idx, release_id in enumerate(release_ids):
         logger.info(f"Handle release from bp : {idx + 1}/{len(release_ids)} :: Start")
         for tracks in handle_one_release(release_id, bp_url, bp_token):
@@ -28,7 +31,7 @@ def bp_tracks_processing(release_attr: ReleaseMeta, release_ids: list, bp_url: s
                 track["clouder_week"] = release_attr.clouder_week
             save_data_mongo_by_id(tracks, "bp_tracks")
         logger.info(f"Handle release from bp : {idx + 1}/{len(release_ids)} :: Done")
-
+    logger.info(f"Collect bp tracks :: {release_attr.clouder_week} :: Done")
     return collect_releases_tracks(release_ids)
 
 

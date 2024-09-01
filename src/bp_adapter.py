@@ -23,8 +23,12 @@ def bp_request(url, params, bp_token):
     return one_page["results"], next_page, dict()
 
 
-def collect_releases(release_meta: ReleaseMeta, bp_url: str, bp_token: str) -> Generator[list[dict], None, None]:
-    logger.info(f"Collecting week : {release_meta} : {release_meta.week_start} : {release_meta.week_end} :: Start")
+def collect_releases(
+    release_meta: ReleaseMeta, bp_url: str, bp_token: str
+) -> Generator[list[dict], None, None]:
+    logger.info(
+        f"Collecting week : {release_meta} : {release_meta.week_start} : {release_meta.week_end} :: Start"
+    )
     url = f"{bp_url}/"
     params = {
         "genre_id": {release_meta.style_id},

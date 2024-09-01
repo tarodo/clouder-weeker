@@ -1,5 +1,5 @@
 import os
-from urllib.parse import urlparse, quote, urlunparse
+from urllib.parse import quote, urlparse, urlunparse
 
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
@@ -13,7 +13,9 @@ def get_mongo_conn():
         port = os.getenv("MONGO_PORT")
         db = os.getenv("MONGO_DB")
     except Exception as e:
-        raise KeyError(f"Environment variables for MongoDB are not set correctly. :: {e}")
+        raise KeyError(
+            f"Environment variables for MongoDB are not set correctly. :: {e}"
+        )
 
     try:
         url = urlparse("")

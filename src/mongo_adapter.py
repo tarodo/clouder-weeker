@@ -1,4 +1,5 @@
 import logging
+
 from pymongo import MongoClient, UpdateOne
 
 from src.db_conf import get_mongo_conn
@@ -15,9 +16,7 @@ def save_data_mongo_by_id(data, collection_name: str, db: MongoClient = None):
         close_connection = True
     operations = []
     for item in data:
-        operations.append(
-            UpdateOne({"id": item["id"]}, {"$set": item}, upsert=True)
-        )
+        operations.append(UpdateOne({"id": item["id"]}, {"$set": item}, upsert=True))
     if not operations:
         logger.info(f"Save data : {collection_name} : count = 0 :: Done")
         return
@@ -26,7 +25,9 @@ def save_data_mongo_by_id(data, collection_name: str, db: MongoClient = None):
         matched = result.matched_count
         upserted = result.upserted_count
         errors = len(data) - matched - upserted
-        logger.info(f"Save data : {collection_name} : {matched=} : {upserted=} : {errors=} :: Done")
+        logger.info(
+            f"Save data : {collection_name} : {matched=} : {upserted=} : {errors=} :: Done"
+        )
     finally:
         if close_connection:
             db.client.close()
@@ -42,7 +43,7 @@ def collect_bp_releases(week_start: str, week_end: str, db: MongoClient = None) 
         result = list(
             db.bp_releases.find(
                 {"publish_date": {"$gte": week_start, "$lte": week_end}},
-                {"_id": 0, "id": 1}
+                {"_id": 0, "id": 1},
             )
         )
         return [item["id"] for item in result]
@@ -60,8 +61,7 @@ def collect_releases_tracks(release_ids: list, db: MongoClient = None) -> list:
     try:
         result = list(
             db.bp_tracks.find(
-                {"release.id": {"$in": release_ids}},
-                {"_id": 0, "id": 1, "isrc": 1}
+                {"release.id": {"$in": release_ids}}, {"_id": 0, "id": 1, "isrc": 1}
             )
         )
         return result
