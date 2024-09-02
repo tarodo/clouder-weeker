@@ -22,17 +22,7 @@ class ReleaseMeta:
         self._statistic = {}
         self._base_playlists = ["new", "old", "not"]
 
-        # self._sp_playlists = {
-        #     self.generate_sp_playlist_name(pl): None for pl in self._playlists_names
-        # }
-
-        self._sp_base_pl = {
-            self.generate_sp_playlist_name(pl): None for pl in self._base_playlists
-        }
-
-        self._sp_extra_pl = {
-            self.generate_sp_playlist_name(pl): None for pl in self.extra_playlists
-        }
+        self._sp_playlists = {}
 
     @property
     def style_id(self) -> int:
@@ -66,11 +56,14 @@ class ReleaseMeta:
     def generate_sp_playlist_name(self, pl_name: str) -> str:
         return f"{self._base_sp_pl_name} :: {pl_name.upper()}"
 
-    def set_sp_base_pl(self, pl_name: str, sp_id: str) -> None:
-        self._sp_base_pl[self.generate_sp_playlist_name(pl_name)] = sp_id
-
-    def set_sp_extra_pl(self, pl_name: str, sp_id: str) -> None:
-        self._sp_extra_pl[self.generate_sp_playlist_name(pl_name)] = sp_id
+    def set_sp_playlist(
+        self, pl_name: str, sp_name: str, sp_id: str, clouder_type: str
+    ) -> None:
+        self._sp_playlists[sp_id] = {
+            "clouder_name": pl_name,
+            "sp_name": sp_name,
+            "clouder_type": clouder_type,
+        }
 
     def set_statistic(self, key: str, value: int) -> None:
         self._statistic[key] = value
@@ -90,6 +83,6 @@ class ReleaseMeta:
             "week_start": self._week_start.isoformat(),
             "week_end": self._week_end.isoformat(),
             "id": self.clouder_week,
-            "sp_playlists": {"base": self._sp_base_pl, "extra": self._sp_extra_pl},
+            "sp_playlists": self._sp_playlists,
             "statistic": self._statistic,
         }
