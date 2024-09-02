@@ -140,12 +140,12 @@ def processing_sp_playlists(release_attr: ReleaseMeta) -> None:
         not_genre_playlist_name, not_genre_tracks
     )
 
-    release_attr.set_sp_playlist("new", new_playlist_id)
-    release_attr.set_sp_playlist("old", old_playlist_id)
-    release_attr.set_sp_playlist("not", not_genre_playlist_id)
+    release_attr.set_sp_base_pl("new", new_playlist_id)
+    release_attr.set_sp_base_pl("old", old_playlist_id)
+    release_attr.set_sp_base_pl("not", not_genre_playlist_id)
     for pl in release_attr.extra_playlists:
         pl_id = create_playlist(release_attr.generate_sp_playlist_name(pl))
-        release_attr.set_sp_playlist(pl, pl_id)
+        release_attr.set_sp_extra_pl(pl, pl_id)
     logger.info(f"Create spotify playlists :: {clouder_week} :: Done")
 
 

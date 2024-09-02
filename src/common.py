@@ -6,8 +6,8 @@ BP_STYLES = {
 }
 
 PLAYLISTS = {
-    "DNB": ["Melodic", "Eastern", "Hard", "Melancholy", "Party", "ReDrum"],
-    "TECHNO": ["Mid", "Eastern", "House", "Low", "High"],
+    "DNB": ["Melodic", "Eastern", "Hard", "Shadowy", "Party", "ReDrum", "Alt"],
+    "TECHNO": ["Mid", "Eastern", "House", "Low", "High", "Alt"],
 }
 
 
@@ -22,8 +22,16 @@ class ReleaseMeta:
         self._statistic = {}
         self._base_playlists = ["new", "old", "not"]
 
-        self._sp_playlists = {
-            self.generate_sp_playlist_name(pl): None for pl in self._playlists_names
+        # self._sp_playlists = {
+        #     self.generate_sp_playlist_name(pl): None for pl in self._playlists_names
+        # }
+
+        self._sp_base_pl = {
+            self.generate_sp_playlist_name(pl): None for pl in self._base_playlists
+        }
+
+        self._sp_extra_pl = {
+            self.generate_sp_playlist_name(pl): None for pl in self.extra_playlists
         }
 
     @property
@@ -48,10 +56,6 @@ class ReleaseMeta:
         return BP_STYLES.get(self._style_id)
 
     @property
-    def _playlists_names(self) -> list[str]:
-        return self._base_playlists + PLAYLISTS[self.style_name]
-
-    @property
     def extra_playlists(self) -> list[str]:
         return PLAYLISTS[self.style_name]
 
@@ -62,8 +66,11 @@ class ReleaseMeta:
     def generate_sp_playlist_name(self, pl_name: str) -> str:
         return f"{self._base_sp_pl_name} :: {pl_name.upper()}"
 
-    def set_sp_playlist(self, pl_name: str, sp_id: str) -> None:
-        self._sp_playlists[self.generate_sp_playlist_name(pl_name)] = sp_id
+    def set_sp_base_pl(self, pl_name: str, sp_id: str) -> None:
+        self._sp_base_pl[self.generate_sp_playlist_name(pl_name)] = sp_id
+
+    def set_sp_extra_pl(self, pl_name: str, sp_id: str) -> None:
+        self._sp_extra_pl[self.generate_sp_playlist_name(pl_name)] = sp_id
 
     def set_statistic(self, key: str, value: int) -> None:
         self._statistic[key] = value
@@ -72,12 +79,8 @@ class ReleaseMeta:
     def clouder_week(self) -> str:
         return f"{self.style_name}_{self._year}_{self._week}"
 
-    @property
-    def sp_playlists(self) -> dict[str, str | None]:
-        return self._sp_playlists
-
     def __str__(self):
-        return f"{self.style_name} :: {self._year} :: {self._week}"
+        return self._base_sp_pl_name
 
     def data_to_mongo(self) -> dict:
         return {
@@ -87,6 +90,6 @@ class ReleaseMeta:
             "week_start": self._week_start.isoformat(),
             "week_end": self._week_end.isoformat(),
             "id": self.clouder_week,
-            "sp_playlists": self.sp_playlists,
+            "sp_playlists": {"base": self._sp_base_pl, "extra": self._sp_extra_pl},
             "statistic": self._statistic,
         }
