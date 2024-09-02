@@ -158,9 +158,9 @@ if __name__ == "__main__":
 
     release_meta = ReleaseMeta(week=34, year=2023, style_id=1)
 
-    # bp_release_processing(release_meta, bp_url, bp_token)
-    # bp_release_tracks_processing(release_meta, bp_url, bp_token)
-    # bp_tracks_processing(release_meta, bp_url, bp_token)
+    bp_release_processing(release_meta, bp_url, bp_token)
+    bp_release_tracks_processing(release_meta, bp_url, bp_token)
+    bp_tracks_processing(release_meta, bp_url, bp_token)
 
     sp_tracks_processing(release_meta)
 
