@@ -139,12 +139,15 @@ def processing_sp_playlists(release_attr: ReleaseMeta) -> None:
     not_genre_playlist_id = create_playlist_with_tracks(
         not_genre_playlist_name, not_genre_tracks
     )
+    trash_playlist_name = release_attr.generate_sp_playlist_name("trash")
+    trash_playlist_id = create_playlist(trash_playlist_name)
 
     release_attr.set_sp_playlist("new", new_playlist_name, new_playlist_id, "base")
     release_attr.set_sp_playlist("old", old_playlist_name, old_playlist_id, "base")
     release_attr.set_sp_playlist(
         "not", not_genre_playlist_name, not_genre_playlist_id, "base"
     )
+    release_attr.set_sp_playlist("trash", trash_playlist_name, trash_playlist_id, "base")
     for pl in release_attr.extra_playlists:
         pl_name = release_attr.generate_sp_playlist_name(pl)
         pl_id = create_playlist(pl_name)
@@ -162,12 +165,12 @@ if __name__ == "__main__":
 
     release_meta = ReleaseMeta(week=34, year=2023, style_id=1)
 
-    bp_release_processing(release_meta, bp_url, bp_token)
-    bp_release_tracks_processing(release_meta, bp_url, bp_token)
-    bp_tracks_processing(release_meta, bp_url, bp_token)
-
-    sp_tracks_processing(release_meta)
-    save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
+    # bp_release_processing(release_meta, bp_url, bp_token)
+    # bp_release_tracks_processing(release_meta, bp_url, bp_token)
+    # bp_tracks_processing(release_meta, bp_url, bp_token)
+    #
+    # sp_tracks_processing(release_meta)
+    # save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
 
     processing_sp_playlists(release_meta)
     save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")

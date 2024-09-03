@@ -51,3 +51,10 @@ def create_playlist_with_tracks(playlist_name: str, sp_tracks: list[str]):
     playlist_id = create_playlist(playlist_name)
     add_tracks(playlist_id, sp_tracks)
     return playlist_id
+
+
+if __name__ == "__main__":
+    from environs import Env
+    env = Env()
+    env.read_env()
+    sp = create_sp()
