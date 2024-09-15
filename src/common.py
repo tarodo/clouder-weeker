@@ -7,7 +7,7 @@ BP_STYLES = {
 
 PLAYLISTS = {
     "DNB": ["Melodic", "Eastern", "Hard", "Shadowy", "Party", "ReDrum", "Alt"],
-    "TECHNO": ["Mid", "Eastern", "House", "Low", "High", "Alt"],
+    "TECHNO": ["Mid", "Eastern", "House", "Low", "Up", "Alt"],
 }
 
 
