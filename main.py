@@ -1,5 +1,4 @@
 import logging
-import random
 import time
 
 from environs import Env
@@ -164,14 +163,14 @@ if __name__ == "__main__":
     bp_url = env.str("BP_URL")
     bp_token = env.str("BP_TOKEN")
 
-    release_meta = ReleaseMeta(week=34, year=2024, style_id=90)
+    release_meta = ReleaseMeta(week=1, year=2025, style_id=1)
 
     # bp_release_processing(release_meta, bp_url, bp_token)
-    bp_release_tracks_processing(release_meta, bp_url, bp_token)
+    # bp_release_tracks_processing(release_meta, bp_url, bp_token)
     # bp_tracks_processing(release_meta, bp_url, bp_token)
-    #
-    # sp_tracks_processing(release_meta)
-    # save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
-    #
-    # processing_sp_playlists(release_meta)
-    # save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
+
+    sp_tracks_processing(release_meta)
+    save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")
+
+    processing_sp_playlists(release_meta)
+    save_data_mongo_by_id([release_meta.data_to_mongo()], "clouder_weeks")

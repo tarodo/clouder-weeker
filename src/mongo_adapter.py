@@ -80,6 +80,24 @@ def collect_releases_tracks(
             db.client.close()
 
 
+def collect_sp_playlists(clouder_week: str, db: MongoClient = None) -> dict:
+    """Collect Spotify playlists from MongoDB"""
+    close_connection = False
+    if db is None:
+        db = get_mongo_conn()
+        close_connection = True
+    try:
+        result = list(
+            db.clouder_weeks.find(
+                {"id": "DNB_2023_34"},
+            )
+        )
+        return {item["id"]: item for item in result}
+    finally:
+        if close_connection:
+            db.client.close()
+
+
 def collect_sp_week_tracks(
     clouder_week: str, week_start: str, db: MongoClient = None
 ) -> tuple[list[Any], list[Any], list[Any]]:
